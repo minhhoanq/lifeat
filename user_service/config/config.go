@@ -22,8 +22,12 @@ type Config struct {
 	DBName               string        `mapstructure:"DB_NAME"`
 	PublicKey            string        `mapstructure:"PUBLIC_KEY"`
 	PrivateKey           string        `mapstructure:"PRIVATE_KEY"`
+	RedisAddres          string        `mapstructure:"REDIS_ADDESS"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	EmailSenderName      string        `mapstructure:"EMAIL_SENDER_NAME"`
+	EmailSenderAddress   string        `mapstructure:"EMAIL_SENDER_ADDRESS"`
+	EmailSenderPassword  string        `mapstructure:"EMAIL_SENDER_PASSWORD"`
 }
 
 // LoadConfig reads configuration from file or enviroment variables.

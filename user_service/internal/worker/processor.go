@@ -4,20 +4,59 @@ import (
 	"context"
 
 	"github.com/hibiken/asynq"
-	"gorm.io/gorm"
+	"github.com/minhhoanq/lifeat/common/logger"
+	"github.com/minhhoanq/lifeat/user_service/internal/email"
+	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
+	"go.uber.org/zap"
+)
+
+const (
+	QueueCritial = "critial"
+	QueueDefault = "default"
 )
 
 type TaskProcessor interface {
-	ProcessTaskVerifyEmail(context.Context, *asynq.Task) error
+	ProcessTaskSendVerifyEmail(ctx context.Context, task *asynq.Task) error
 	Start() error
 	Shutdown()
 }
 
 type RedisTaskProcessor struct {
 	server *asynq.Server
-	db     *gorm.DB
+	l      logger.Interface
+	mailer email.EmailSender
+	q      repo.Querier
 }
 
-// func NewRedisTaskProcessor(redisOpts asynq.RedisClientOpt, db *gorm.DB) TaskProcessor {
-// 	server :=
-// }
+func NewRedisTaskProcessor(redisOpts asynq.RedisClientOpt,
+	mailer email.EmailSender,
+	q repo.Querier,
+	l logger.Interface) TaskProcessor {
+	server := asynq.NewServer(redisOpts,
+		asynq.Config{
+			Queues: map[string]int{
+				QueueCritial: 10,
+				QueueDefault: 5,
+			},
+			ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
+				l.Error("process task failed", zap.String("Type", task.Type()), zap.ByteString("payload", task.Payload()))
+			}),
+		},
+	)
+
+	return &RedisTaskProcessor{
+		server: server,
+		mailer: mailer,
+		q:      q,
+	}
+}
+
+func (processor *RedisTaskProcessor) Start() error {
+	mux := asynq.NewServeMux()
+
+	mux.HandleFunc(TaskSendVerifyEmail, processor.ProcessTaskSendVerifyEmail)
+	return processor.server.Start(mux)
+}
+func (processor *RedisTaskProcessor) Shutdown() {
+	processor.server.Shutdown()
+}

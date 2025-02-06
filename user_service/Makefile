@@ -23,7 +23,10 @@ migrateup:
 migratedown:
 	migrate -path migrations -database 'postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable' down
 
+redis:
+	docker run --name lifeat-redis -p 6379:6379 -d redis:7-alpine
+
 server:
 	go run cmd/app/main.go
 
-.PHONY: build postgres createdb dropdb migrate-create migrateup migratedown server 
+.PHONY: build postgres createdb dropdb migrate-create migrateup migratedown redis server 

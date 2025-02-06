@@ -24,9 +24,9 @@ func newUserRoutes(handler *echo.Group, u usecase.UserUsecase, l logger.Interfac
 
 	handler.POST("/login", r.login)
 	handler.POST("/renew_access", r.createUser)
+	handler.POST("", r.createUser)
 	handler.Use(authMiddleware(tokenMaker))
 	handler.GET("/:id", r.getUserByID)
-	handler.POST("", r.createUser)
 
 }
 

@@ -4,12 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
+	"github.com/hibiken/asynq"
+	"github.com/lib/pq"
 	"github.com/minhhoanq/lifeat/user_service/config"
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
 	"github.com/minhhoanq/lifeat/user_service/internal/util"
-	"time"
+	"github.com/minhhoanq/lifeat/user_service/internal/worker"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/google/uuid"
 )
@@ -22,23 +28,23 @@ type UserUsecase interface {
 }
 
 type userUsecase struct {
-	userRepo    repo.UserRepository
-	sessionRepo repo.SessionRepository
-	tokenMaker  token.Maker
-	cfg         config.Config
+	tokenMaker      token.Maker
+	cfg             config.Config
+	taskDistributor worker.TaskDistributor
+	q               repo.Querier
 }
 
-func New(userRepo repo.UserRepository, sessionRepo repo.SessionRepository, tokenMaker token.Maker, cfg config.Config) UserUsecase {
+func New(q repo.Querier, tokenMaker token.Maker, cfg config.Config, taskDistributor worker.TaskDistributor) UserUsecase {
 	return &userUsecase{
-		userRepo:    userRepo,
-		sessionRepo: sessionRepo,
-		tokenMaker:  tokenMaker,
-		cfg:         cfg,
+		tokenMaker:      tokenMaker,
+		cfg:             cfg,
+		taskDistributor: taskDistributor,
+		q:               q,
 	}
 }
 
 func (uc userUsecase) GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
-	user, err := uc.userRepo.GetUserByID(ctx, id)
+	user, err := uc.q.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -59,19 +65,41 @@ func (uc userUsecase) CreateUser(ctx context.Context, arg CreateUserUsecaseParam
 		return nil, err
 	}
 
-	payload := repo.CreateUserRepoParams{
-		Username: arg.Username,
-		Email:    arg.Email,
-		Password: hashedPassword,
-		RoleId:   arg.RoleId,
+	args := repo.CreateUserTxParams{
+		CreateUserParams: repo.CreateUserParams{
+			Username: arg.Username,
+			Email:    arg.Email,
+			Password: hashedPassword,
+			RoleId:   arg.RoleId,
+		},
+		AfterCreate: func(user *entity.User) error {
+			tasPayload := &worker.PayloadSendVerifyEmail{UserId: user.ID}
+
+			opts := []asynq.Option{
+				asynq.MaxRetry(10),
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(worker.QueueCritial),
+			}
+
+			return uc.taskDistributor.DistributeTaskSendVerifyEmail(ctx, tasPayload, opts...)
+		},
 	}
 
-	user, err := uc.userRepo.CreateUser(ctx, payload)
+	txResult, err := uc.q.CreateUserTx(ctx, args)
+
 	if err != nil {
-		return nil, err
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "unique_violation":
+				return nil, status.Errorf(codes.AlreadyExists, "username already exists %s", err)
+
+			}
+		}
+		return nil, status.Errorf(codes.Internal, "failed to create user %s", err)
+
 	}
 
-	return user, nil
+	return txResult.User, nil
 }
 
 type LoginUsecaseParams struct {
@@ -89,7 +117,7 @@ type LoginUscaseResponse struct {
 }
 
 func (uc userUsecase) Login(ctx context.Context, arg LoginUsecaseParams) (*LoginUscaseResponse, error) {
-	user, err := uc.userRepo.GetUserByUsername(ctx, arg.Username)
+	user, err := uc.q.GetUserByUsername(ctx, arg.Username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
@@ -114,7 +142,7 @@ func (uc userUsecase) Login(ctx context.Context, arg LoginUsecaseParams) (*Login
 		return nil, fmt.Errorf("create refresh token error: %v", err)
 	}
 
-	session, err := uc.sessionRepo.CreateSession(ctx, repo.CreateSessionRepoParams{
+	session, err := uc.q.CreateSession(ctx, repo.CreateSessionParams{
 		UserId:       user.ID,
 		RefreshToken: refreshToken,
 		UserAgent:    "",
@@ -151,7 +179,7 @@ func (uc userUsecase) RenewAccessToken(ctx context.Context, arg RenewAccessToken
 		return nil, err
 	}
 
-	session, err := uc.sessionRepo.GetSessionByUserId(ctx, refreshTokenPayload.UserId)
+	session, err := uc.q.GetSessionByUserId(ctx, refreshTokenPayload.UserId)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +200,7 @@ func (uc userUsecase) RenewAccessToken(ctx context.Context, arg RenewAccessToken
 		return nil, fmt.Errorf("expired session")
 	}
 
-	user, err := uc.userRepo.GetUserByID(ctx, session.UserId)
+	user, err := uc.q.GetUserByID(ctx, session.UserId)
 	if err != nil {
 		return nil, err
 	}

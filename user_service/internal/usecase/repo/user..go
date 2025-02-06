@@ -3,35 +3,18 @@ package repo
 import (
 	"context"
 	"fmt"
+
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
-	"gorm.io/gorm"
 )
 
-type UserRepository interface {
-	GetUserByID(context.Context, uuid.UUID) (*entity.User, error)
-	CreateUser(ctx context.Context, arg CreateUserRepoParams) (*entity.User, error)
-	GetUserByUsername(ctx context.Context, username string) (*entity.User, error)
-}
-
-type userRepository struct {
-	*gorm.DB
-}
-
-// New user repository
-func NewUserRepository(db *gorm.DB) UserRepository {
-	return &userRepository{
-		DB: db,
-	}
-}
-
 // GetUserByID -.
-func (u *userRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+func (q *SQLStore) GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
 	fmt.Println("[INFO] UserRepo - GetUser - User ID", id)
 	var user *entity.User
-	result := u.DB.WithContext(ctx).First(&user, id)
+	result := q.db.WithContext(ctx).First(&user, id)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -40,10 +23,10 @@ func (u *userRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*entity
 }
 
 // GetUserByUsername -.
-func (u *userRepository) GetUserByUsername(ctx context.Context, username string) (*entity.User, error) {
+func (q *SQLStore) GetUserByUsername(ctx context.Context, username string) (*entity.User, error) {
 	fmt.Println("[INFO] UserRepo - GetUser - UserName", username)
 	var user *entity.User
-	result := u.DB.WithContext(ctx).Where("username = ?", username).First(&user)
+	result := q.db.WithContext(ctx).Where("username = ?", username).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -51,7 +34,7 @@ func (u *userRepository) GetUserByUsername(ctx context.Context, username string)
 	return user, nil
 }
 
-type CreateUserRepoParams struct {
+type CreateUserParams struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
@@ -59,7 +42,7 @@ type CreateUserRepoParams struct {
 }
 
 // CreateUser -.
-func (u *userRepository) CreateUser(ctx context.Context, arg CreateUserRepoParams) (*entity.User, error) {
+func (q *SQLStore) CreateUser(ctx context.Context, arg CreateUserParams) (*entity.User, error) {
 	fmt.Println("[INFO] UserRepo - CreateUser - User", arg)
 	var user *entity.User = &entity.User{
 		Username: arg.Username,
@@ -68,7 +51,7 @@ func (u *userRepository) CreateUser(ctx context.Context, arg CreateUserRepoParam
 		RoleId:   arg.RoleId,
 	}
 
-	result := u.DB.WithContext(ctx).Create(&user)
+	result := q.db.WithContext(ctx).Create(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}

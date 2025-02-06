@@ -1,16 +1,21 @@
 package rest
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/hibiken/asynq"
 	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/user_service/config"
 	v1 "github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1"
+	"github.com/minhhoanq/lifeat/user_service/internal/email"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
+	"github.com/minhhoanq/lifeat/user_service/internal/worker"
 	"github.com/minhhoanq/lifeat/user_service/pkg/postgres"
 	"github.com/minhhoanq/lifeat/user_service/pkg/rest"
 
@@ -39,8 +44,18 @@ func RunRestServer(cfg config.Config) {
 		return
 	}
 
+	redisOpts := asynq.RedisClientOpt{
+		Addr: cfg.RedisAddres,
+	}
+
+	taskDistributor := worker.NewRedisTaskDistributor(l, redisOpts)
+
+	q := repo.New(pg.DB)
+
+	runTaskProcessor(context.Background(), cfg, redisOpts, q, l)
+	// Resful
 	handler := echo.New()
-	u := usecase.New(repo.NewUserRepository(pg.DB), repo.NewSessionRepository(pg.DB), tokenMaker, cfg)
+	u := usecase.New(q, tokenMaker, cfg, taskDistributor)
 	v1.NewRouter(handler, l, u, tokenMaker)
 	// , rest.Port(cfg.HTTPServerAddress)
 	httpServer := rest.NewRestServer(handler, l)
@@ -59,5 +74,15 @@ func RunRestServer(cfg config.Config) {
 	err = httpServer.Shutdown()
 	if err != nil {
 		l.Error("app - Run - httpServer.Shutdown", zap.String("Error: ", err.Error()))
+	}
+}
+
+func runTaskProcessor(ctx context.Context, cfg config.Config, redisOpt asynq.RedisClientOpt, q repo.Querier, l logger.Interface) {
+	mailer := email.NewGmailSender(cfg.EmailSenderName, cfg.EmailSenderAddress, cfg.EmailSenderPassword)
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, mailer, q, l)
+	fmt.Println("start task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		fmt.Println("failed to start task processor")
 	}
 }
