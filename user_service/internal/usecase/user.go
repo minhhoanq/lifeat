@@ -12,7 +12,6 @@ import (
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
-	"github.com/minhhoanq/lifeat/user_service/internal/util"
 	"github.com/minhhoanq/lifeat/user_service/internal/worker"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -60,7 +59,7 @@ type CreateUserUsecaseParams struct {
 }
 
 func (uc userUsecase) CreateUser(ctx context.Context, arg CreateUserUsecaseParams) (*entity.User, error) {
-	hashedPassword, err := util.HashPassword(arg.Password)
+	hashedPassword, err := entity.HashPassword(arg.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +126,7 @@ func (uc userUsecase) Login(ctx context.Context, arg LoginUsecaseParams) (*Login
 	}
 
 	// password of user is hashed password
-	err = util.ComparePassword(arg.Password, user.Password)
+	err = entity.ComparePassword(arg.Password, user.Password)
 	if err != nil {
 		return nil, err
 	}

@@ -11,27 +11,27 @@ import (
 	"gorm.io/gorm"
 )
 
-type Postgres struct {
+type Database struct {
 	*gorm.DB
 }
 
-func New(cfg config.Config, l logger.Interface) (Postgres, error) {
+func New(cfg config.Config, l logger.Interface) (Database, error) {
 	dbMigration, err := NewMigrator(cfg)
 	if err != nil {
-		return Postgres{}, err
+		return Database{}, err
 	}
 
 	err = dbMigration.Up(context.Background())
 	if err != nil {
-		return Postgres{}, err
+		return Database{}, err
 	}
 
 	db, err := NewDatabase(cfg, l)
 	if err != nil {
-		return Postgres{}, nil
+		return Database{}, nil
 	}
 
-	return Postgres{DB: db}, nil
+	return Database{DB: db}, nil
 }
 
 func NewDatabase(cfg config.Config, l logger.Interface) (*gorm.DB, error) {
@@ -49,7 +49,7 @@ func NewDatabase(cfg config.Config, l logger.Interface) (*gorm.DB, error) {
 	return db, nil
 }
 
-func (p *Postgres) Close(l logger.Interface) {
+func (p *Database) Close(l logger.Interface) {
 	db, _ := p.DB.DB()
 	db.Close()
 	l.Info("disconnect to datatbase")

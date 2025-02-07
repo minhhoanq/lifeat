@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
+	"github.com/minhhoanq/lifeat/user_service/pkg/postgres"
 )
 
 type SQLStore struct {
-	db *gorm.DB
+	db postgres.Database
 }
 
-func New(db *gorm.DB) Querier {
+func New(db postgres.Database) Querier {
 	return &SQLStore{
 		db: db,
 	}
@@ -27,7 +27,8 @@ func (store *SQLStore) execTx(ctx context.Context, fn func(Querier) error) error
 		return tx.Error
 	}
 
-	q := New(tx)
+	db := postgres.Database{DB: tx}
+	q := New(db)
 	// Thực thi function với transaction
 	err := fn(q)
 	if err != nil {

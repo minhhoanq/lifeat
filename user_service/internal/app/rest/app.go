@@ -50,7 +50,8 @@ func RunRestServer(cfg config.Config) {
 
 	taskDistributor := worker.NewRedisTaskDistributor(l, redisOpts)
 
-	q := repo.New(pg.DB)
+	db := postgres.Database{DB: pg.DB}
+	q := repo.New(db)
 
 	runTaskProcessor(context.Background(), cfg, redisOpts, q, l)
 	// Resful
