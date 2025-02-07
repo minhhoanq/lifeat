@@ -11,6 +11,7 @@ import (
 	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/user_service/config"
 	v1 "github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1"
+	"github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1/middleware"
 	"github.com/minhhoanq/lifeat/user_service/internal/email"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase"
@@ -56,6 +57,8 @@ func RunRestServer(cfg config.Config) {
 	runTaskProcessor(context.Background(), cfg, redisOpts, q, l)
 	// Resful
 	handler := echo.New()
+	// CORS
+	handler.Use(middleware.CORS)
 	u := usecase.New(q, tokenMaker, cfg, taskDistributor)
 	v1.NewRouter(handler, l, u, tokenMaker)
 	// , rest.Port(cfg.HTTPServerAddress)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/minhhoanq/lifeat/common/logger"
+	"github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1/middleware"
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase"
@@ -25,7 +26,7 @@ func newUserRoutes(handler *echo.Group, u usecase.UserUsecase, l logger.Interfac
 	handler.POST("/login", r.login)
 	handler.POST("/renew_access", r.createUser)
 	handler.POST("", r.createUser)
-	handler.Use(authMiddleware(tokenMaker))
+	handler.Use(middleware.AuthMiddleware(tokenMaker))
 	handler.GET("/:id", r.getUserByID)
 
 }

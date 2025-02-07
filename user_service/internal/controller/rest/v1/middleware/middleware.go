@@ -1,11 +1,12 @@
-package v1
+package middleware
 
 import (
 	"fmt"
-	"github.com/minhhoanq/lifeat/user_service/internal/token"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/minhhoanq/lifeat/user_service/internal/token"
 
 	"github.com/labstack/echo/v4"
 )
@@ -16,7 +17,7 @@ const (
 	authorizationPayloadKey = "authorization_payload"
 )
 
-func authMiddleware(tokenMaker token.Maker) echo.MiddlewareFunc {
+func AuthMiddleware(tokenMaker token.Maker) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authorization := c.Request().Header.Get(authorizationHeaderKey)
