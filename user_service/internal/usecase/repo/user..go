@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 
@@ -12,7 +13,7 @@ import (
 
 // GetUserByID -.
 func (q *SQLStore) GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
-	fmt.Println("[INFO] UserRepo - GetUser - User ID", id)
+	fmt.Println("[INFO] UserRepo - GetUser - User ID", id, time.Now())
 	var user *entity.User
 	result := q.db.WithContext(ctx).First(&user, id)
 	if result.Error != nil {
@@ -44,6 +45,7 @@ type CreateUserParams struct {
 // CreateUser -.
 func (q *SQLStore) CreateUser(ctx context.Context, arg CreateUserParams) (*entity.User, error) {
 	fmt.Println("[INFO] UserRepo - CreateUser - User", arg)
+
 	var user *entity.User = &entity.User{
 		Username: arg.Username,
 		Email:    arg.Email,

@@ -72,15 +72,14 @@ func (uc userUsecase) CreateUser(ctx context.Context, arg CreateUserUsecaseParam
 			RoleId:   arg.RoleId,
 		},
 		AfterCreate: func(user *entity.User) error {
-			tasPayload := &worker.PayloadSendVerifyEmail{UserId: user.ID}
+			taskPayload := &worker.PayloadSendVerifyEmail{UserId: user.ID}
 
 			opts := []asynq.Option{
 				asynq.MaxRetry(10),
-				asynq.ProcessIn(10 * time.Second),
 				asynq.Queue(worker.QueueCritial),
 			}
 
-			return uc.taskDistributor.DistributeTaskSendVerifyEmail(ctx, tasPayload, opts...)
+			return uc.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, opts...)
 		},
 	}
 
@@ -94,8 +93,7 @@ func (uc userUsecase) CreateUser(ctx context.Context, arg CreateUserUsecaseParam
 
 			}
 		}
-		return nil, status.Errorf(codes.Internal, "failed to create user %s", err)
-
+		return nil, status.Errorf(codes.Internal, "failed to create user %s", err.Error())
 	}
 
 	return txResult.User, nil

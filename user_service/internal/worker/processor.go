@@ -39,7 +39,7 @@ func NewRedisTaskProcessor(redisOpts asynq.RedisClientOpt,
 				QueueDefault: 5,
 			},
 			ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
-				l.Error("process task failed", zap.String("Type", task.Type()), zap.ByteString("payload", task.Payload()))
+				l.Error("process task failed", zap.String("Error", err.Error()), zap.String("Type", task.Type()), zap.ByteString("payload", task.Payload()))
 			}),
 		},
 	)
@@ -48,6 +48,7 @@ func NewRedisTaskProcessor(redisOpts asynq.RedisClientOpt,
 		server: server,
 		mailer: mailer,
 		q:      q,
+		l:      l,
 	}
 }
 
@@ -57,6 +58,7 @@ func (processor *RedisTaskProcessor) Start() error {
 	mux.HandleFunc(TaskSendVerifyEmail, processor.ProcessTaskSendVerifyEmail)
 	return processor.server.Start(mux)
 }
+
 func (processor *RedisTaskProcessor) Shutdown() {
 	processor.server.Shutdown()
 }

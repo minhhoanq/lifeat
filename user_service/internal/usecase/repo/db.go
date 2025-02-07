@@ -21,8 +21,6 @@ func (store *SQLStore) execTx(ctx context.Context, fn func(Querier) error) error
 	// Bắt đầu transaction với GORM
 	tx := store.db.WithContext(ctx).Begin()
 
-	fmt.Println("Start create user")
-
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -38,8 +36,6 @@ func (store *SQLStore) execTx(ctx context.Context, fn func(Querier) error) error
 		}
 		return err
 	}
-
-	fmt.Println("Done create user")
 
 	// Commit transaction
 	return tx.Commit().Error

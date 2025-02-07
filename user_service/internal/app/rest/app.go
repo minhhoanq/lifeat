@@ -2,7 +2,6 @@ package rest
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,20 +16,26 @@ import (
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
 	"github.com/minhhoanq/lifeat/user_service/internal/worker"
+	"github.com/minhhoanq/lifeat/user_service/pkg/constants"
 	"github.com/minhhoanq/lifeat/user_service/pkg/postgres"
 	"github.com/minhhoanq/lifeat/user_service/pkg/rest"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
 
-const (
-	publicKeyPath  = "config/keys/public.pem"
-	privateKeyPath = "config/keys/private.pem"
-)
+var interruptSignals = []os.Signal{
+	os.Interrupt,
+	syscall.SIGTERM,
+	syscall.SIGINT,
+}
 
 func RunRestServer(cfg config.Config) {
 	l := logger.NewWrapLogger(zap.DebugLevel, false)
+
+	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
+	defer stop()
 
 	pg, err := postgres.New(cfg, l)
 	if err != nil {
@@ -39,7 +44,7 @@ func RunRestServer(cfg config.Config) {
 	}
 	defer pg.Close(l)
 
-	tokenMaker, err := token.NewJWTMaker(publicKeyPath, privateKeyPath)
+	tokenMaker, err := token.NewJWTMaker(constants.PublicKeyPath, constants.PrivateKeyPath)
 	if err != nil {
 		l.Error("jwt maker error", zap.String("Error: ", err.Error()))
 		return
@@ -54,39 +59,42 @@ func RunRestServer(cfg config.Config) {
 	db := postgres.Database{DB: pg.DB}
 	q := repo.New(db)
 
-	runTaskProcessor(context.Background(), cfg, redisOpts, q, l)
 	// Resful
 	handler := echo.New()
 	// CORS
 	handler.Use(middleware.CORS)
 	u := usecase.New(q, tokenMaker, cfg, taskDistributor)
 	v1.NewRouter(handler, l, u, tokenMaker)
+
+	// waitGroup
+	waitGroup, ctx := errgroup.WithContext(ctx)
+
 	// , rest.Port(cfg.HTTPServerAddress)
-	httpServer := rest.NewRestServer(handler, l)
 	// Waiting signal
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 
-	select {
-	case s := <-interrupt:
-		l.Info("app - Run - signal: " + s.String())
-	case err := <-httpServer.Notify():
-		l.Info("error httpServer Notify", zap.String("Error: ", err.Error()))
-	}
+	rest.NewRestServer(handler, l, waitGroup, ctx)
+	runTaskProcessor(ctx, cfg, redisOpts, waitGroup, q, l)
 
-	// Shutdown
-	err = httpServer.Shutdown()
+	err = waitGroup.Wait()
 	if err != nil {
-		l.Error("app - Run - httpServer.Shutdown", zap.String("Error: ", err.Error()))
+		l.Error("error from wait group")
 	}
 }
 
-func runTaskProcessor(ctx context.Context, cfg config.Config, redisOpt asynq.RedisClientOpt, q repo.Querier, l logger.Interface) {
+func runTaskProcessor(ctx context.Context, cfg config.Config, redisOpt asynq.RedisClientOpt, waitGroup *errgroup.Group, q repo.Querier, l logger.Interface) {
 	mailer := email.NewGmailSender(cfg.EmailSenderName, cfg.EmailSenderAddress, cfg.EmailSenderPassword)
 	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, mailer, q, l)
-	fmt.Println("start task processor")
+	l.Info("start task processor")
 	err := taskProcessor.Start()
 	if err != nil {
-		fmt.Println("failed to start task processor")
+		l.Error("failed to start task processor", zap.String("ERROR", err.Error()))
 	}
+
+	waitGroup.Go(func() error {
+		<-ctx.Done()
+		l.Info("graceful shudown task processor")
+		taskProcessor.Shutdown()
+		l.Info("task processor stopped")
+		return nil
+	})
 }

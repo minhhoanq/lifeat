@@ -20,10 +20,13 @@ type PayloadSendVerifyEmail struct {
 }
 
 func (distributor *RedistaskDistributor) DistributeTaskSendVerifyEmail(ctx context.Context, payload *PayloadSendVerifyEmail, opts ...asynq.Option) error {
+	distributor.l.Info("Distributed send verify email")
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed marshal payload %w", err)
 	}
+
+	distributor.l.Info("Create task send verify email")
 
 	task := asynq.NewTask(TaskSendVerifyEmail, jsonPayload, opts...)
 
@@ -41,6 +44,8 @@ func (distributor *RedistaskDistributor) DistributeTaskSendVerifyEmail(ctx conte
 }
 
 func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Context, task *asynq.Task) error {
+	processor.l.Info("processing task send verify email", zap.String("type", task.Type()))
+
 	var payload PayloadSendVerifyEmail
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", asynq.SkipRetry)
@@ -49,10 +54,10 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 	user, err := processor.q.GetUserByID(ctx, payload.UserId)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return fmt.Errorf("user not found")
+			return fmt.Errorf("user not found %w", asynq.SkipRetry)
 		}
 
-		return fmt.Errorf("failed to get user: %w", err)
+		return fmt.Errorf("failed to get user: %w", asynq.SkipRetry)
 	}
 
 	verifyEmail, err := processor.q.CreateVerifyEmail(ctx, repo.CreateVerifyEmailParams{
