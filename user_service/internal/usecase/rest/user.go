@@ -11,7 +11,7 @@ import (
 	"github.com/minhhoanq/lifeat/user_service/config"
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
-	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
+	"github.com/minhhoanq/lifeat/user_service/internal/usecase/rest/repo"
 	"github.com/minhhoanq/lifeat/user_service/internal/worker"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

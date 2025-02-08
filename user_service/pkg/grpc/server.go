@@ -4,20 +4,24 @@ import (
 	"context"
 
 	"github.com/minhhoanq/lifeat/user_service/config"
-	pbuser "github.com/minhhoanq/lifeat/user_service/internal/controller/grpc/v1/api/v1/user_service"
+	pbuser "github.com/minhhoanq/lifeat/user_service/internal/controller/grpc/v1/user_service"
+	"github.com/minhhoanq/lifeat/user_service/internal/usecase/rest/repo"
+	"github.com/minhhoanq/lifeat/user_service/internal/worker"
 )
-
-const ()
 
 type GrpcServer struct {
 	pbuser.UnimplementedUserServiceServer
-	cfg config.Config
-	ctx context.Context
+	cfg             config.Config
+	ctx             context.Context
+	taskDistributor worker.TaskDistributor
+	q               repo.Querier
 }
 
-func NewRestServer(cfg config.Config, ctx context.Context) (*GrpcServer, error) {
+func NewGrpcServer(cfg config.Config, ctx context.Context, taskDistributor worker.TaskDistributor, q repo.Querier) (*GrpcServer, error) {
 	return &GrpcServer{
-		cfg: cfg,
-		ctx: ctx,
+		cfg:             cfg,
+		ctx:             ctx,
+		taskDistributor: taskDistributor,
+		q:               q,
 	}, nil
 }

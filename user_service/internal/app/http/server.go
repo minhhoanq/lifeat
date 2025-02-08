@@ -10,16 +10,16 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/user_service/config"
-	pbuser "github.com/minhhoanq/lifeat/user_service/internal/controller/grpc/v1/api/v1/user_service"
+	pbuser "github.com/minhhoanq/lifeat/user_service/internal/controller/grpc/v1/user_service"
 	v1 "github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1"
 	"github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1/middleware"
 	"github.com/minhhoanq/lifeat/user_service/internal/email"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
-	"github.com/minhhoanq/lifeat/user_service/internal/usecase"
-	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
+	usecase "github.com/minhhoanq/lifeat/user_service/internal/usecase/rest"
+	"github.com/minhhoanq/lifeat/user_service/internal/usecase/rest/repo"
 	"github.com/minhhoanq/lifeat/user_service/internal/worker"
 	"github.com/minhhoanq/lifeat/user_service/pkg/constants"
-	gserver "github.com/minhhoanq/lifeat/user_service/pkg/grpc"
+	grpcserver "github.com/minhhoanq/lifeat/user_service/pkg/grpc"
 	"github.com/minhhoanq/lifeat/user_service/pkg/postgres"
 	"github.com/minhhoanq/lifeat/user_service/pkg/rest"
 	"golang.org/x/sync/errgroup"
@@ -65,7 +65,7 @@ func RunRestServer(cfg config.Config) {
 	q := repo.New(db)
 
 	go func() {
-		GrpcServer(ctx, cfg, l)
+		GrpcServer(ctx, cfg, l, taskDistributor, q)
 	}()
 
 	// Resful
@@ -107,8 +107,8 @@ func runTaskProcessor(ctx context.Context, cfg config.Config, redisOpt asynq.Red
 	})
 }
 
-func GrpcServer(ctx context.Context, cfg config.Config, l logger.Interface) {
-	server, err := gserver.NewRestServer(cfg, ctx)
+func GrpcServer(ctx context.Context, cfg config.Config, l logger.Interface, taskDistributor worker.TaskDistributor, q repo.Querier) {
+	server, err := grpcserver.NewGrpcServer(cfg, ctx, taskDistributor, q)
 	if err != nil {
 		l.Error("failed to start gRPC server", zap.String("ERROR", err.Error()))
 	}

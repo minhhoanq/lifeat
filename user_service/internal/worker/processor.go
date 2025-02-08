@@ -6,7 +6,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/user_service/internal/email"
-	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
+	"github.com/minhhoanq/lifeat/user_service/internal/usecase/rest/repo"
 	"go.uber.org/zap"
 )
 

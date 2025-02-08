@@ -9,7 +9,7 @@ import (
 	"github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1/middleware"
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
-	"github.com/minhhoanq/lifeat/user_service/internal/usecase"
+	usecase "github.com/minhhoanq/lifeat/user_service/internal/usecase/rest"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
