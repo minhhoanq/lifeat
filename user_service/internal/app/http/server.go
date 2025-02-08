@@ -65,7 +65,7 @@ func RunRestServer(cfg config.Config) {
 	q := repo.New(db)
 
 	go func() {
-		GrpcServer(ctx, cfg, l, taskDistributor, q)
+		GrpcServer(ctx, cfg, l, taskDistributor, q, tokenMaker)
 	}()
 
 	// Resful
@@ -107,8 +107,8 @@ func runTaskProcessor(ctx context.Context, cfg config.Config, redisOpt asynq.Red
 	})
 }
 
-func GrpcServer(ctx context.Context, cfg config.Config, l logger.Interface, taskDistributor worker.TaskDistributor, q repo.Querier) {
-	server, err := grpcserver.NewGrpcServer(cfg, ctx, taskDistributor, q)
+func GrpcServer(ctx context.Context, cfg config.Config, l logger.Interface, taskDistributor worker.TaskDistributor, q repo.Querier, tokenMaker token.Maker) {
+	server, err := grpcserver.NewGrpcServer(cfg, ctx, taskDistributor, q, tokenMaker)
 	if err != nil {
 		l.Error("failed to start gRPC server", zap.String("ERROR", err.Error()))
 	}

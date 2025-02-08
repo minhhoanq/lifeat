@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package user_service;
 
-import "rpc_signup.proto";
+import "user_service/rpc_signup.proto";
+import "user_service/rpc_signin.proto";
 
 option go_package = "grpc/v1/user_service";
 
 service UserService {
     rpc Signup (SignupRequest) returns (SignupResponse) {}
+    rpc Signin (SigninRequest) returns (SigninResponse) {}
 }

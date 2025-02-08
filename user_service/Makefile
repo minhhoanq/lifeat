@@ -9,22 +9,22 @@ build:
 		cmd/app/main.go
 
 postgres:
-	docker run --name lifeat-postgres -p 5435:5435 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:17-alpine
+	docker run --name user_service_psql -p 5435:5435 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:17-alpine
 
 createdb:
-	docker exec -it lifeat-postgres createdb --username root --owner root lifeat
+	docker exec -it user_service_psql createdb --username root --owner root lifeat_user_service_psql
 
 dropdb:
-	docker exec -it lifeat-postgres dropdb lifeat
+	docker exec -it user_service_psql dropdb lifeat_user_service_psql
 
 migrate-create:
 	migrate create -ext sql -dir migrations -seq $(name)
 
 migrateup:
-	migrate -path migrations -database 'postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable' up
+	migrate -path pkg/postgres/migrations -database 'postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable' up
 
 migratedown:
-	migrate -path migrations -database 'postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable' down
+	migrate -path pkg/postgres/migrations -database 'postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable' down
 
 redis:
 	docker run --name lifeat-redis -p 6379:6379 -d redis:7-alpine

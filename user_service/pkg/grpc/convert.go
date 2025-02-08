@@ -6,7 +6,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func convertUser(user entity.User) *pbuser.User {
+func convertUser(user *entity.User) *pbuser.User {
 	return &pbuser.User{
 		Username:          user.Username,
 		Email:             user.Email,

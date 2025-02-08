@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+    user_service_psql:
+        image: postgres:17-alpine
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=secret
+            - POSTGRES_DB=lifeat_user_service_psql
+        restart: always
+        volumes:
+            - ./db/user_service:/var/lib/postgresql/data
+
+    redis:
+        image: redis:7-alpine
+        restart: always
+        ports:
+            - "6379:6379"
