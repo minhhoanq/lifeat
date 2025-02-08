@@ -1,5 +1,8 @@
 include app.env
 
+proto:
+	buf generate api/v1
+
 build:
 	go build \
 		-o build/app \
@@ -29,4 +32,7 @@ redis:
 server:
 	go run cmd/app/main.go
 
-.PHONY: build postgres createdb dropdb migrate-create migrateup migratedown redis server 
+evans:
+	evans --proto user_service.proto --path api/v1/user_service --host localhost --port 9000 repl
+
+.PHONY: proto build postgres createdb dropdb migrate-create migrateup migratedown redis server proto

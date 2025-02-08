@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package user_service;
+
+import "rpc_signup.proto";
+
+option go_package = "grpc/v1/user_service";
+
+service UserService {
+    rpc Signup (SignupRequest) returns (SignupResponse) {}
+}

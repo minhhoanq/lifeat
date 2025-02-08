@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/user_service/config"
-	"github.com/minhhoanq/lifeat/user_service/internal/app/rest"
+	rest "github.com/minhhoanq/lifeat/user_service/internal/app/http"
 )
 
 func main() {

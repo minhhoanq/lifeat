@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package user_service;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "grpc/v1/user_service";
+
+message User {
+    string username = 1;
+    string email = 2;
+    google.protobuf.Timestamp password_changed_at = 3;
+    google.protobuf.Timestamp created_at = 4;
+}

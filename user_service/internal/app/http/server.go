@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,6 +10,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/user_service/config"
+	pbuser "github.com/minhhoanq/lifeat/user_service/internal/controller/grpc/v1/api/v1/user_service"
 	v1 "github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1"
 	"github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1/middleware"
 	"github.com/minhhoanq/lifeat/user_service/internal/email"
@@ -17,9 +19,12 @@ import (
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase/repo"
 	"github.com/minhhoanq/lifeat/user_service/internal/worker"
 	"github.com/minhhoanq/lifeat/user_service/pkg/constants"
+	gserver "github.com/minhhoanq/lifeat/user_service/pkg/grpc"
 	"github.com/minhhoanq/lifeat/user_service/pkg/postgres"
 	"github.com/minhhoanq/lifeat/user_service/pkg/rest"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -59,6 +64,10 @@ func RunRestServer(cfg config.Config) {
 	db := postgres.Database{DB: pg.DB}
 	q := repo.New(db)
 
+	go func() {
+		GrpcServer(ctx, cfg, l)
+	}()
+
 	// Resful
 	handler := echo.New()
 	// CORS
@@ -71,7 +80,6 @@ func RunRestServer(cfg config.Config) {
 
 	// , rest.Port(cfg.HTTPServerAddress)
 	// Waiting signal
-
 	rest.NewRestServer(handler, l, waitGroup, ctx)
 	runTaskProcessor(ctx, cfg, redisOpts, waitGroup, q, l)
 
@@ -97,4 +105,26 @@ func runTaskProcessor(ctx context.Context, cfg config.Config, redisOpt asynq.Red
 		l.Info("task processor stopped")
 		return nil
 	})
+}
+
+func GrpcServer(ctx context.Context, cfg config.Config, l logger.Interface) {
+	server, err := gserver.NewRestServer(cfg, ctx)
+	if err != nil {
+		l.Error("failed to start gRPC server", zap.String("ERROR", err.Error()))
+	}
+	grpcServer := grpc.NewServer()
+	pbuser.RegisterUserServiceServer(grpcServer, server)
+	reflection.Register(grpcServer)
+	listener, err := net.Listen("tcp", cfg.GRPCServerAddress)
+	if err != nil {
+		l.Error("failed to create listener", zap.String("ERROR", err.Error()))
+	}
+
+	l.Info("start gRPC server", zap.String("Address", cfg.GRPCServerAddress))
+
+	err = grpcServer.Serve(listener)
+
+	if err != nil {
+		l.Error("cannot start gRPC server", zap.String("ERROR", err.Error()))
+	}
 }
