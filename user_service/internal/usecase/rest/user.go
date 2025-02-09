@@ -8,6 +8,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/lib/pq"
+	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/user_service/config"
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
@@ -31,14 +32,16 @@ type userUsecase struct {
 	cfg             config.Config
 	taskDistributor worker.TaskDistributor
 	q               repo.Querier
+	l               logger.Interface
 }
 
-func New(q repo.Querier, tokenMaker token.Maker, cfg config.Config, taskDistributor worker.TaskDistributor) UserUsecase {
+func New(q repo.Querier, tokenMaker token.Maker, cfg config.Config, taskDistributor worker.TaskDistributor, l logger.Interface) UserUsecase {
 	return &userUsecase{
 		tokenMaker:      tokenMaker,
 		cfg:             cfg,
 		taskDistributor: taskDistributor,
 		q:               q,
+		l:               l,
 	}
 }
 
@@ -95,6 +98,9 @@ func (uc userUsecase) CreateUser(ctx context.Context, arg CreateUserUsecaseParam
 		}
 		return nil, status.Errorf(codes.Internal, "failed to create user %s", err.Error())
 	}
+
+	// producer, err := kafka.NewProducer(uc.cfg, uc.l)
+	// producer.Produce(ctx, "VerifyEmailSignup", )
 
 	return txResult.User, nil
 }

@@ -72,7 +72,7 @@ func RunRestServer(cfg config.Config) {
 	handler := echo.New()
 	// CORS
 	handler.Use(middleware.CORS)
-	u := usecase.New(q, tokenMaker, cfg, taskDistributor)
+	u := usecase.New(q, tokenMaker, cfg, taskDistributor, l)
 	v1.NewRouter(handler, l, u, tokenMaker)
 
 	// waitGroup
