@@ -14,3 +14,8 @@ const (
 	PublicKeyPath  = "config/keys/public.pem"
 	PrivateKeyPath = "config/keys/private.pem"
 )
+
+// Kafka Topics
+const (
+	TopicVerifyEmailForSignup = "verify_email_for_signup"
+)

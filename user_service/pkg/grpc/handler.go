@@ -3,14 +3,14 @@ package grpc
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
-	"github.com/hibiken/asynq"
 	"github.com/lib/pq"
 	pbuser "github.com/minhhoanq/lifeat/user_service/internal/controller/grpc/v1/user_service"
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase/rest/repo"
-	"github.com/minhhoanq/lifeat/user_service/internal/worker"
+	"github.com/minhhoanq/lifeat/user_service/pkg/constants"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -30,14 +30,12 @@ func (server *GrpcServer) Signup(ctx context.Context, arg *pbuser.SignupRequest)
 			RoleId:   1,
 		},
 		AfterCreate: func(user *entity.User) error {
-			taskPayload := &worker.PayloadSendVerifyEmail{UserId: user.ID}
-
-			opts := []asynq.Option{
-				asynq.MaxRetry(10),
-				asynq.Queue(worker.QueueCritial),
+			message, err := json.Marshal(user.ID)
+			if err != nil {
+				return err
 			}
 
-			return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, opts...)
+			return server.kafkaProducer.Produce(ctx, constants.TopicVerifyEmailForSignup, message)
 		},
 	}
 

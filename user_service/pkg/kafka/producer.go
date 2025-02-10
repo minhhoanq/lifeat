@@ -21,11 +21,13 @@ type producer struct {
 
 func NewProducer(cfg config.Config, l logger.Interface) (Producer, error) {
 	config := sarama.NewConfig()
-	config.Producer.Return.Successes = true
+	config.Producer.Retry.Max = 1
 	config.Producer.RequiredAcks = sarama.WaitForAll
-	config.Producer.Retry.Max = 5
+	config.Producer.Return.Successes = true
+	config.ClientID = cfg.KafkaClientId
+	config.Metadata.Full = true
 
-	saramaSyncProducer, err := sarama.NewSyncProducer([]string{""}, config)
+	saramaSyncProducer, err := sarama.NewSyncProducer([]string{cfg.KafkaBrokers}, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create sarama sync producer: %w", err)
 	}

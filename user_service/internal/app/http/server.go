@@ -14,12 +14,14 @@ import (
 	v1 "github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1"
 	"github.com/minhhoanq/lifeat/user_service/internal/controller/rest/v1/middleware"
 	"github.com/minhhoanq/lifeat/user_service/internal/email"
+	"github.com/minhhoanq/lifeat/user_service/internal/handler/consumers"
 	"github.com/minhhoanq/lifeat/user_service/internal/token"
 	usecase "github.com/minhhoanq/lifeat/user_service/internal/usecase/rest"
 	"github.com/minhhoanq/lifeat/user_service/internal/usecase/rest/repo"
 	"github.com/minhhoanq/lifeat/user_service/internal/worker"
 	"github.com/minhhoanq/lifeat/user_service/pkg/constants"
 	grpcserver "github.com/minhhoanq/lifeat/user_service/pkg/grpc"
+	"github.com/minhhoanq/lifeat/user_service/pkg/kafka"
 	"github.com/minhhoanq/lifeat/user_service/pkg/postgres"
 	"github.com/minhhoanq/lifeat/user_service/pkg/rest"
 	"golang.org/x/sync/errgroup"
@@ -48,6 +50,8 @@ func RunRestServer(cfg config.Config) {
 		return
 	}
 	defer pg.Close(l)
+	db := postgres.Database{DB: pg.DB}
+	q := repo.New(db)
 
 	tokenMaker, err := token.NewJWTMaker(constants.PublicKeyPath, constants.PrivateKeyPath)
 	if err != nil {
@@ -61,11 +65,33 @@ func RunRestServer(cfg config.Config) {
 
 	taskDistributor := worker.NewRedisTaskDistributor(l, redisOpts)
 
-	db := postgres.Database{DB: pg.DB}
-	q := repo.New(db)
+	kafkaProducer, err := kafka.NewProducer(cfg, l)
+	if err != nil {
+		l.Error("failed to connect kafka producer", zap.String("Error: ", err.Error()))
+		return
+	}
+
+	kafkaConsumer, err := kafka.NewConsumer(cfg, l)
+	if err != nil {
+		l.Error("failed to connect kafka consumer", zap.String("Error: ", err.Error()))
+		return
+	}
+
+	mailer := email.NewGmailSender(cfg.EmailSenderName, cfg.EmailSenderAddress, cfg.EmailSenderPassword)
+	userSigunHandler := consumers.NewUserSignupHandler(mailer, q, l)
+
+	userServiceKafkaConsumer := consumers.NewUserServiceKafkaConsumer(kafkaConsumer, userSigunHandler)
+
+	go func(ctx context.Context) {
+		err = userServiceKafkaConsumer.Start(ctx)
+		if err != nil {
+			l.Error("failed to processing kafka consumer", zap.String("Error: ", err.Error()))
+			return
+		}
+	}(ctx)
 
 	go func() {
-		GrpcServer(ctx, cfg, l, taskDistributor, q, tokenMaker)
+		GrpcServer(ctx, cfg, l, taskDistributor, q, tokenMaker, kafkaProducer)
 	}()
 
 	// Resful
@@ -81,7 +107,7 @@ func RunRestServer(cfg config.Config) {
 	// , rest.Port(cfg.HTTPServerAddress)
 	// Waiting signal
 	rest.NewRestServer(handler, l, waitGroup, ctx)
-	runTaskProcessor(ctx, cfg, redisOpts, waitGroup, q, l)
+	runTaskProcessor(ctx, cfg, mailer, redisOpts, waitGroup, q, l)
 
 	err = waitGroup.Wait()
 	if err != nil {
@@ -89,8 +115,7 @@ func RunRestServer(cfg config.Config) {
 	}
 }
 
-func runTaskProcessor(ctx context.Context, cfg config.Config, redisOpt asynq.RedisClientOpt, waitGroup *errgroup.Group, q repo.Querier, l logger.Interface) {
-	mailer := email.NewGmailSender(cfg.EmailSenderName, cfg.EmailSenderAddress, cfg.EmailSenderPassword)
+func runTaskProcessor(ctx context.Context, cfg config.Config, mailer email.EmailSender, redisOpt asynq.RedisClientOpt, waitGroup *errgroup.Group, q repo.Querier, l logger.Interface) {
 	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, mailer, q, l)
 	l.Info("start task processor")
 	err := taskProcessor.Start()
@@ -107,8 +132,8 @@ func runTaskProcessor(ctx context.Context, cfg config.Config, redisOpt asynq.Red
 	})
 }
 
-func GrpcServer(ctx context.Context, cfg config.Config, l logger.Interface, taskDistributor worker.TaskDistributor, q repo.Querier, tokenMaker token.Maker) {
-	server, err := grpcserver.NewGrpcServer(cfg, ctx, taskDistributor, q, tokenMaker)
+func GrpcServer(ctx context.Context, cfg config.Config, l logger.Interface, taskDistributor worker.TaskDistributor, q repo.Querier, tokenMaker token.Maker, kafkaProducer kafka.Producer) {
+	server, err := grpcserver.NewGrpcServer(cfg, ctx, taskDistributor, q, tokenMaker, kafkaProducer)
 	if err != nil {
 		l.Error("failed to start gRPC server", zap.String("ERROR", err.Error()))
 	}

@@ -28,6 +28,8 @@ type Config struct {
 	EmailSenderName      string        `mapstructure:"EMAIL_SENDER_NAME"`
 	EmailSenderAddress   string        `mapstructure:"EMAIL_SENDER_ADDRESS"`
 	EmailSenderPassword  string        `mapstructure:"EMAIL_SENDER_PASSWORD"`
+	KafkaBrokers         string        `mapstructure:"KAFKA_BROKERS"`
+	KafkaClientId        string        `mapstructure:"KAFKA_CLIENT_ID"`
 }
 
 // LoadConfig reads configuration from file or enviroment variables.
