@@ -2,14 +2,16 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"net"
 
-	"github.com/minhhoanq/lifeat/order_service/internal/configs"
-	pb "github.com/minhhoanq/lifeat/order_service/internal/generated/catalog_service"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/validator"
+	"github.com/minhhoanq/lifeat/catalog_service/configs"
+	pb "github.com/minhhoanq/lifeat/catalog_service/internal/generated/catalog_service"
+	"github.com/minhhoanq/lifeat/common/logger"
+	"go.uber.org/zap"
+
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Server interface {
@@ -17,22 +19,25 @@ type Server interface {
 }
 
 type server struct {
-	grpcConfig configs.GRPC
-	handler    pb.CatalogServiceServer
+	cfg     configs.Config
+	handler pb.CatalogServiceServer
+	l       logger.Interface
 }
 
-func NewServer(
-	grpcConfig configs.GRPC,
+func NewGRPCServer(
+	cfg configs.Config,
 	handler pb.CatalogServiceServer,
+	l logger.Interface,
 ) Server {
 	return &server{
-		grpcConfig: grpcConfig,
-		handler:    handler,
+		cfg:     cfg,
+		handler: handler,
+		l:       l,
 	}
 }
 
 func (s *server) Start(ctx context.Context) error {
-	listener, err := net.Listen("tcp", s.grpcConfig.Address)
+	listener, err := net.Listen("tcp", s.cfg.GRPCServerAddress)
 	if err != nil {
 		return err
 	}
@@ -46,8 +51,9 @@ func (s *server) Start(ctx context.Context) error {
 			validator.StreamServerInterceptor(),
 		),
 	}
-	server := grpc.NewServer(opts...)
-	pb.RegisterCatalogServiceServer(server, s.handler)
-	fmt.Printf("gRPC server is running on %s\n", s.grpcConfig.Address)
-	return server.Serve(listener)
+	grpcServer := grpc.NewServer(opts...)
+	reflection.Register(grpcServer)
+	pb.RegisterCatalogServiceServer(grpcServer, s.handler)
+	s.l.Info("gRPC server is running on", zap.String("Address: ", s.cfg.GRPCServerAddress))
+	return grpcServer.Serve(listener)
 }

@@ -2,6 +2,6 @@ go 1.23.6
 
 use (
 	./common
-	./order_service
+	./catalog_service
 	./user_service
 )
