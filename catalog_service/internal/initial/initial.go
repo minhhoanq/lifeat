@@ -10,12 +10,13 @@ import (
 
 func InitialServer(cfg configs.Config, l logger.Interface) (grpc.Server, error) {
 
-	database, err := database.New(cfg, l)
+	db, err := database.New(cfg, l)
 	if err != nil {
 		return nil, err
 	}
 
-	catalogService := service.NewCatalogService(database.DB, l)
+	catalogAccessor := database.NewCatalogDataAccessor(db, l)
+	catalogService := service.NewCatalogService(db.DB, l, catalogAccessor)
 	handler, err := grpc.NewHandler(catalogService, l)
 	if err != nil {
 		return nil, err

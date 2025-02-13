@@ -47,46 +47,28 @@
           "CatalogService"
         ]
       }
-    },
-    "/catalog.CatalogService/GetProductById": {
-      "post": {
-        "operationId": "CatalogService_GetProductById",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/catalogGetProductByIdResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/catalogGetProductByIdRequest"
-            }
-          }
-        ],
-        "tags": [
-          "CatalogService"
-        ]
-      }
     }
   },
   "definitions": {
+    "catalogAttributeValue": {
+      "type": "object",
+      "properties": {
+        "attributeId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "title": "Attribute value pair"
+    },
     "catalogCreateProductRequest": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "Product basic information"
         },
         "description": {
           "type": "string"
@@ -101,6 +83,24 @@
         "brandId": {
           "type": "integer",
           "format": "int32"
+        },
+        "skus": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/catalogSKUToCreate"
+          },
+          "title": "SKUs associated with the product"
+        }
+      },
+      "title": "Request message for creating a new product with SKUs"
+    },
+    "catalogCreateProductResponse": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "$ref": "#/definitions/catalogProduct",
+          "title": "Created product information"
         },
         "skus": {
           "type": "array",
@@ -110,47 +110,42 @@
           }
         }
       },
-      "title": "====== REQUEST \u0026 RESPONSE ======"
+      "title": "Response message for product creation"
     },
-    "catalogCreateProductResponse": {
-      "type": "object",
-      "properties": {
-        "product": {
-          "$ref": "#/definitions/catalogProduct"
-        }
-      }
-    },
-    "catalogGetProductByIdRequest": {
+    "catalogInventory": {
       "type": "object",
       "properties": {
         "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "skuId": {
           "type": "string"
+        },
+        "stock": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "reservations": {
+          "type": "string",
+          "title": "JSON string representation"
         }
-      }
-    },
-    "catalogGetProductByIdResponse": {
-      "type": "object",
-      "properties": {
-        "product": {
-          "$ref": "#/definitions/catalogProduct"
-        }
-      }
+      },
+      "title": "Inventory entity"
     },
     "catalogPrice": {
       "type": "object",
       "properties": {
         "id": {
           "type": "integer",
-          "format": "int32",
-          "title": "UUID"
+          "format": "int32"
         },
         "skuId": {
-          "type": "string",
-          "title": "UUID SKU"
+          "type": "string"
         },
         "originalPrice": {
-          "type": "string",
-          "format": "int64"
+          "type": "integer",
+          "format": "int32"
         },
         "effectiveDate": {
           "type": "string",
@@ -159,14 +154,14 @@
         "active": {
           "type": "boolean"
         }
-      }
+      },
+      "title": "Price entity"
     },
     "catalogProduct": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "UUID"
+          "type": "string"
         },
         "name": {
           "type": "string"
@@ -185,25 +180,25 @@
           "type": "integer",
           "format": "int32"
         },
-        "skus": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/catalogSKU"
-          }
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
         }
-      }
+      },
+      "title": "Product entity"
     },
     "catalogSKU": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "UUID"
+          "type": "string"
         },
         "productId": {
-          "type": "string",
-          "title": "UUID"
+          "type": "string"
         },
         "name": {
           "type": "string"
@@ -211,40 +206,56 @@
         "slug": {
           "type": "string"
         },
-        "skuAttributes": {
+        "attributes": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/catalogSKUAttribute"
+            "$ref": "#/definitions/catalogAttributeValue"
           }
         },
-        "prices": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/catalogPrice"
-          }
+        "currentPrice": {
+          "$ref": "#/definitions/catalogPrice"
+        },
+        "inventory": {
+          "$ref": "#/definitions/catalogInventory"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
         }
-      }
+      },
+      "title": "SKU entity"
     },
-    "catalogSKUAttribute": {
+    "catalogSKUToCreate": {
       "type": "object",
       "properties": {
-        "id": {
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "originalPrice": {
           "type": "integer",
           "format": "int32"
         },
-        "attributeId": {
+        "initialStock": {
           "type": "integer",
           "format": "int32"
         },
-        "skuId": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/catalogAttributeValue"
+          }
         }
-      }
+      },
+      "title": "SKU creation information"
     },
     "protobufAny": {
       "type": "object",

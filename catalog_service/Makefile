@@ -15,4 +15,7 @@ migratedown:
 server:
 	go run cmd/app/main.go
 
+evans:
+	evans --proto catalog_service.proto --path api/catalog_service --host localhost --port 9001 repl
+
 .PHONY: proto migrate-create migrateup migratedown server

@@ -5,6 +5,7 @@ import (
 
 	"github.com/minhhoanq/lifeat/catalog_service/internal/handler/grpc"
 	"github.com/minhhoanq/lifeat/common/logger"
+	"go.uber.org/zap"
 )
 
 type Server struct {
@@ -20,6 +21,9 @@ func NewServer(grpcServer grpc.Server, l logger.Interface) *Server {
 }
 
 func (s *Server) Start() {
-	s.grpcServer.Start(context.Background())
-	s.l.Info("Start gRPC server successfully")
+	s.l.Info("starting gRPC server")
+	err := s.grpcServer.Start(context.Background())
+	if err != nil {
+		s.l.Error("failed start gRPC server", zap.Error(err))
+	}
 }

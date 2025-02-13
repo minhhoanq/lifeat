@@ -54,6 +54,7 @@ CREATE TABLE "sku_attributes" (
   "id" serial PRIMARY KEY,
   "sku_id" uuid NOT NULL,
   "attribute_id" int NOT NULL,
+  "value" varchar NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
@@ -78,8 +79,8 @@ CREATE TABLE "prices" (
 CREATE TABLE "inventories" (
   "id" serial PRIMARY KEY,
   "sku_id" uuid NOT NULL,
-  "original_price" int NOT NULL,
-  "reservations" timestamp NOT NULL,
+  "stock" int NOT NULL,
+  "reservations" json,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
