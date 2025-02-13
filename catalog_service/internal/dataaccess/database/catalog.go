@@ -15,6 +15,7 @@ import (
 // Interface definition
 type CatalogDataAccessor interface {
 	CreateProduct(ctx context.Context, arg *CreateProductParams) (*CreateProductResponse, error)
+	ListProdudct(ctx context.Context, arg *ListProductRequest) (*ListProductResponse, error)
 }
 
 type catalogDataAccessor struct {
@@ -157,4 +158,8 @@ func (c *catalogDataAccessor) createSKUWithDetails(
 		Inventory:     inventory,
 		SKUAttributes: skuAttributes,
 	}, nil
+}
+
+func (c *catalogDataAccessor) ListProdudct(ctx context.Context, arg *ListProductRequest) (*ListProductResponse, error) {
+	return nil, nil
 }

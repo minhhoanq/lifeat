@@ -15,7 +15,7 @@ import (
 
 type CatalogService interface {
 	CreateProduct(ctx context.Context, arg *pb.CreateProductRequest) (*pb.CreateProductResponse, error)
-	// GetProductById(context.Context, *pb.GetProductByIdRequest) (*pb.GetProductByIdResponse, error)
+	ListProduct(ctx context.Context, arg *pb.ListProductRequest) (*pb.ListProductResponse, error)
 }
 
 type catalogService struct {
@@ -30,6 +30,61 @@ func NewCatalogService(db *gorm.DB, l logger.Interface, catalogAccessor database
 		l:               l,
 		catalogAccessor: catalogAccessor,
 	}
+}
+
+func convertProductResponse(dbResponse *database.ProductDetail) *pb.ProductWithSKUs {
+	// Transform database response to protobuf response
+	response := &pb.ProductWithSKUs{
+		Product: &pb.Product{
+			Id:          dbResponse.Product.ID.String(),
+			Name:        dbResponse.Product.Name,
+			Description: dbResponse.Product.Description,
+			Image:       dbResponse.Product.Image,
+			CategoryId:  dbResponse.Product.CategoryID,
+			BrandId:     dbResponse.Product.BrandID,
+			CreatedAt:   timestamppb.New(dbResponse.Product.CreatedAt),
+			UpdatedAt:   timestamppb.New(dbResponse.Product.UpdatedAt),
+		},
+		Skus: make([]*pb.SKU, 0, len(dbResponse.SKUs)),
+	}
+
+	// Transform SKUs in response
+	for _, skuDetail := range dbResponse.SKUs {
+		sku := &pb.SKU{
+			Id:        skuDetail.SKU.ID.String(),
+			ProductId: skuDetail.SKU.ProductID.String(),
+			Name:      skuDetail.SKU.Name,
+			Slug:      skuDetail.SKU.Slug,
+			CreatedAt: timestamppb.New(skuDetail.SKU.CreatedAt),
+			UpdatedAt: timestamppb.New(skuDetail.SKU.UpdatedAt),
+			CurrentPrice: &pb.Price{
+				Id:            skuDetail.Price.ID,
+				SkuId:         skuDetail.Price.SkuID.String(),
+				OriginalPrice: skuDetail.Price.OriginalPrice,
+				EffectiveDate: timestamppb.New(skuDetail.Price.EffectiveDate),
+				Active:        skuDetail.Price.Active,
+			},
+			Inventory: &pb.Inventory{
+				Id:           skuDetail.Inventory.ID,
+				SkuId:        skuDetail.Inventory.SkuID.String(),
+				Stock:        skuDetail.Inventory.Stock,
+				Reservations: string(skuDetail.Inventory.Reservations),
+			},
+			Attributes: make([]*pb.AttributeValue, 0, len(skuDetail.SKUAttributes)),
+		}
+
+		// Transform SKU attributes
+		for _, attr := range skuDetail.SKUAttributes {
+			sku.Attributes = append(sku.Attributes, &pb.AttributeValue{
+				AttributeId: attr.AttributeID,
+				Value:       attr.Value,
+			})
+		}
+
+		response.Skus = append(response.Skus, sku)
+	}
+
+	return response
 }
 
 func (c *catalogService) CreateProduct(ctx context.Context, arg *pb.CreateProductRequest) (*pb.CreateProductResponse, error) {
@@ -79,63 +134,32 @@ func (c *catalogService) CreateProduct(ctx context.Context, arg *pb.CreateProduc
 		return nil, err
 	}
 
-	// Transform database response to protobuf response
-	response := &pb.CreateProductResponse{
-		Product: &pb.Product{
-			Id:          dbResponse.ProductDetail.Product.ID.String(),
-			Name:        dbResponse.ProductDetail.Product.Name,
-			Description: dbResponse.ProductDetail.Product.Description,
-			Image:       dbResponse.ProductDetail.Product.Image,
-			CategoryId:  dbResponse.ProductDetail.Product.CategoryID,
-			BrandId:     dbResponse.ProductDetail.Product.BrandID,
-			CreatedAt:   timestamppb.New(dbResponse.ProductDetail.Product.CreatedAt),
-			UpdatedAt:   timestamppb.New(dbResponse.ProductDetail.Product.UpdatedAt),
-		},
-		Skus: make([]*pb.SKU, 0, len(dbResponse.ProductDetail.SKUs)),
-	}
-
-	// Transform SKUs in response
-	for _, skuDetail := range dbResponse.ProductDetail.SKUs {
-		sku := &pb.SKU{
-			Id:        skuDetail.SKU.ID.String(),
-			ProductId: skuDetail.SKU.ProductID.String(),
-			Name:      skuDetail.SKU.Name,
-			Slug:      skuDetail.SKU.Slug,
-			CreatedAt: timestamppb.New(skuDetail.SKU.CreatedAt),
-			UpdatedAt: timestamppb.New(skuDetail.SKU.UpdatedAt),
-			CurrentPrice: &pb.Price{
-				Id:            skuDetail.Price.ID,
-				SkuId:         skuDetail.Price.SkuID.String(),
-				OriginalPrice: skuDetail.Price.OriginalPrice,
-				EffectiveDate: timestamppb.New(skuDetail.Price.EffectiveDate),
-				Active:        skuDetail.Price.Active,
-			},
-			Inventory: &pb.Inventory{
-				Id:    skuDetail.Inventory.ID,
-				SkuId: skuDetail.Inventory.SkuID.String(),
-				Stock: skuDetail.Inventory.Stock,
-				// Reservations: skuDetail.Inventory.Reservations,
-			},
-			Attributes: make([]*pb.AttributeValue, 0, len(skuDetail.SKUAttributes)),
-		}
-
-		// Transform SKU attributes
-		for _, attr := range skuDetail.SKUAttributes {
-			sku.Attributes = append(sku.Attributes, &pb.AttributeValue{
-				AttributeId: attr.AttributeID,
-				Value:       attr.Value,
-			})
-		}
-
-		response.Skus = append(response.Skus, sku)
-	}
+	response := convertProductResponse(&dbResponse.ProductDetail)
 
 	c.l.Info("product created successfully",
 		zap.String("product_id", response.Product.Id))
 
-	return response, nil
+	return &pb.CreateProductResponse{
+		Product: response,
+	}, nil
 }
 
-// func (c *catalogService) GetProductById(context.Context, *pb.GetProductByIdRequest) (*pb.GetProductByIdResponse, error) {
-// 	return nil, nil
-// }
+func (c *catalogService) ListProduct(ctx context.Context, arg *pb.ListProductRequest) (*pb.ListProductResponse, error) {
+	products, err := c.catalogAccessor.ListProdudct(ctx, &database.ListProductRequest{
+		Page:     arg.GetPage(),
+		PageSize: arg.GetPageSize(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	response := make([]*pb.ProductWithSKUs, 0, len(products.Products))
+
+	for _, product := range products.Products {
+		response = append(response, convertProductResponse(&product))
+	}
+
+	return &pb.ListProductResponse{
+		Products: response,
+	}, nil
+}

@@ -32,6 +32,6 @@ func (h *Handler) CreateProduct(ctx context.Context, arg *pb.CreateProductReques
 	return product, nil
 }
 
-// func (h *Handler) GetProductById(context.Context, *pb.GetProductByIdRequest) (*pb.GetProductByIdResponse, error) {
-// 	return nil, nil
-// }
+func (h *Handler) ListProduct(ctx context.Context, arg *pb.ListProductRequest) (*pb.ListProductResponse, error) {
+	return nil, nil
+}

@@ -2,6 +2,7 @@ package database
 
 import "time"
 
+// CreateProduct
 type CreateProductParams struct {
 	Name        string
 	Description string
@@ -48,4 +49,14 @@ type SKUDetail struct {
 	Price         Price
 	Inventory     Inventory
 	SKUAttributes []SKUAttribute
+}
+
+// ListProduct
+type ListProductRequest struct {
+	Page     int32
+	PageSize int32
+}
+
+type ListProductResponse struct {
+	Products []ProductDetail
 }

@@ -47,6 +47,38 @@
           "CatalogService"
         ]
       }
+    },
+    "/catalog.CatalogService/ListProduct": {
+      "post": {
+        "operationId": "CatalogService_ListProduct",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/catalogListProductResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/catalogListProductRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CatalogService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -99,15 +131,8 @@
       "type": "object",
       "properties": {
         "product": {
-          "$ref": "#/definitions/catalogProduct",
+          "$ref": "#/definitions/catalogProductWithSKUs",
           "title": "Created product information"
-        },
-        "skus": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/catalogSKU"
-          }
         }
       },
       "title": "Response message for product creation"
@@ -132,6 +157,31 @@
         }
       },
       "title": "Inventory entity"
+    },
+    "catalogListProductRequest": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "catalogListProductResponse": {
+      "type": "object",
+      "properties": {
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/catalogProductWithSKUs"
+          }
+        }
+      }
     },
     "catalogPrice": {
       "type": "object",
@@ -190,6 +240,21 @@
         }
       },
       "title": "Product entity"
+    },
+    "catalogProductWithSKUs": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "$ref": "#/definitions/catalogProduct"
+        },
+        "skus": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/catalogSKU"
+          }
+        }
+      }
     },
     "catalogSKU": {
       "type": "object",
