@@ -57,3 +57,15 @@ type SKUAttribute struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
+
+type Cart struct {
+	ID     uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+type CartItem struct {
+	ID       uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	CartID   uuid.UUID `json:"cart_id"`
+	SkuID    uuid.UUID `json:"sku_id"`
+	Quantity int32     `json:"quantity"`
+}

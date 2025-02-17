@@ -12,39 +12,13 @@ service CatalogService {
   rpc ListProduct(ListProductRequest) returns (ListProductResponse);
 }
 
-// Request message for creating a new product with SKUs
-message CreateProductRequest {
-  // Product basic information
-  string name = 1;
-  string description = 2;
-  string image = 3;
-  int32 category_id = 4;
-  int32 brand_id = 5;
-
-  // SKUs associated with the product
-  repeated SKUToCreate skus = 6;
-}
-
-// SKU creation information
-message SKUToCreate {
-  string name = 1;
-  string slug = 2;
-  int32 original_price = 3;
-  int32 initial_stock = 4;
-  repeated AttributeValue attributes = 5;
-}
-
 // Attribute value pair
 message AttributeValue {
   int32 attribute_id = 1;
   string value = 2;
 }
 
-// Response message for product creation
-message CreateProductResponse {
-  // Created product information
-  ProductWithSKUs product = 1;
-}
+
 
 // Product entity
 message Product {
@@ -88,6 +62,35 @@ message Inventory {
   string reservations = 4; // JSON string representation
 }
 
+//------------------ Request and Response Messages ------------------
+// Request message for creating a new product with SKUs
+message CreateProductRequest {
+  // Product basic information
+  string name = 1;
+  string description = 2;
+  string image = 3;
+  int32 category_id = 4;
+  int32 brand_id = 5;
+
+  // SKUs associated with the product
+  repeated SKUToCreate skus = 6;
+}
+
+// SKU creation information
+message SKUToCreate {
+  string name = 1;
+  string slug = 2;
+  int32 original_price = 3;
+  int32 initial_stock = 4;
+  repeated AttributeValue attributes = 5;
+}
+
+// Response message for product creation
+message CreateProductResponse {
+  // Created product information
+  ProductWithSKUs product = 1;
+}
+
 message ListProductRequest {
   int32 page = 1;
   int32 page_size = 2;
@@ -100,4 +103,29 @@ message ListProductResponse {
 message ProductWithSKUs {
   Product product = 1;
   repeated SKU skus = 2;
+}
+
+message CreateCartRequest {
+  string user_id = 1;
+}
+
+message CreateCartResponse {
+  string cart_id = 1;
+  string user_id = 2;
+}
+
+message AddToCartItemRequest {
+  CartItem item = 1;
+}
+
+message CartItem {
+  string id = 1;
+  string cart_id = 2;
+  string sku_id = 3;
+  int32 quantity = 4;
+}
+
+message AddToCartItemResponse {
+  string cart_id = 1;
+  repeated CartItem items = 2;
 }

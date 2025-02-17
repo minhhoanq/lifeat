@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/minhhoanq/lifeat/catalog_service/internal/dataaccess/database"
 	pb "github.com/minhhoanq/lifeat/catalog_service/internal/generated/catalog_service"
 	"github.com/minhhoanq/lifeat/common/logger"
@@ -16,6 +17,8 @@ import (
 type CatalogService interface {
 	CreateProduct(ctx context.Context, arg *pb.CreateProductRequest) (*pb.CreateProductResponse, error)
 	ListProduct(ctx context.Context, arg *pb.ListProductRequest) (*pb.ListProductResponse, error)
+	CreateCart(ctx context.Context, arg *pb.CreateCartRequest) (*pb.CreateCartResponse, error)
+	AddToCartItem(ctx context.Context, arg *pb.AddToCartItemRequest) (*pb.AddToCartItemResponse, error)
 }
 
 type catalogService struct {
@@ -162,4 +165,66 @@ func (c *catalogService) ListProduct(ctx context.Context, arg *pb.ListProductReq
 	return &pb.ListProductResponse{
 		Products: response,
 	}, nil
+}
+
+func (c *catalogService) CreateCart(ctx context.Context, arg *pb.CreateCartRequest) (*pb.CreateCartResponse, error) {
+	uuidUserID, err := uuid.Parse(arg.UserId)
+	if err != nil {
+		c.l.Error("failed to parse user id", zap.Error(err))
+		return nil, err
+	}
+
+	cart, err := c.catalogAccessor.CreateCart(ctx, &database.CreateCartRequest{
+		UserID: uuidUserID,
+	})
+	if err != nil {
+		c.l.Error("failed to create cart", zap.Error(err))
+		return nil, err
+	}
+
+	return &pb.CreateCartResponse{
+		CartId: cart.CartID.String(),
+		UserId: cart.UserID.String(),
+	}, nil
+}
+
+func (c *catalogService) AddToCartItem(ctx context.Context, arg *pb.AddToCartItemRequest) (*pb.AddToCartItemResponse, error) {
+	uuidCartID, err := uuid.Parse(arg.Item.CartId)
+	if err != nil {
+		c.l.Error("failed to parse cart id", zap.Error(err))
+		return nil, err
+	}
+
+	uuidSkuID, err := uuid.Parse(arg.Item.SkuId)
+	if err != nil {
+		c.l.Error("failed to parse sku id", zap.Error(err))
+		return nil, err
+	}
+
+	cartItems, err := c.catalogAccessor.AddToCartItem(ctx, &database.AddToCartItemRequest{
+		CartID:   uuidCartID,
+		SkuID:    uuidSkuID,
+		Quantity: arg.Item.Quantity,
+	})
+
+	if err != nil {
+		c.l.Error("failed to add item to cart", zap.Error(err))
+		return nil, err
+	}
+
+	response := &pb.AddToCartItemResponse{
+		CartId: cartItems.Cart.ID.String(),
+		Items:  make([]*pb.CartItem, 0, len(cartItems.CartItem)),
+	}
+
+	for _, item := range cartItems.CartItem {
+		response.Items = append(response.Items, &pb.CartItem{
+			Id:       item.ID.String(),
+			CartId:   item.CartID.String(),
+			SkuId:    item.SkuID.String(),
+			Quantity: item.Quantity,
+		})
+	}
+
+	return response, nil
 }

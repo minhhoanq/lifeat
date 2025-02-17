@@ -125,7 +125,7 @@
           "title": "SKUs associated with the product"
         }
       },
-      "title": "Request message for creating a new product with SKUs"
+      "title": "------------------ Request and Response Messages ------------------\nRequest message for creating a new product with SKUs"
     },
     "catalogCreateProductResponse": {
       "type": "object",

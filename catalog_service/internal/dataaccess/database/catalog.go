@@ -18,6 +18,8 @@ import (
 type CatalogDataAccessor interface {
 	CreateProduct(ctx context.Context, arg *CreateProductParams) (*CreateProductResponse, error)
 	ListProducts(ctx context.Context, arg *ListProductRequest) (*ListProductResponse, error)
+	CreateCart(ctx context.Context, arg *CreateCartRequest) (*CreateCartResponse, error)
+	AddToCartItem(ctx context.Context, arg *AddToCartItemRequest) (*AddToCartItemResponse, error)
 }
 
 type catalogDataAccessor struct {
@@ -254,52 +256,79 @@ func (c *catalogDataAccessor) ListProducts(ctx context.Context, arg *ListProduct
 	}, nil
 }
 
-// Helper method to get a single product with all its details
-// func (r *ProductRepository) GetProductByID(ctx context.Context, productID uuid.UUID) (*ProductDetail, error) {
-// 	var product Product
-// 	if err := c.database.First(&product, "id = ?", productID).Error; err != nil {
-// 		return nil, err
-// 	}
+func (c *catalogDataAccessor) CreateCart(ctx context.Context, arg *CreateCartRequest) (*CreateCartResponse, error) {
+	c.l.Info("create cart request", zap.String("user_id", arg.UserID.String()))
 
-// 	productDetail := ProductDetail{
-// 		Product: product,
-// 	}
+	cart := &Cart{
+		UserID: arg.UserID,
+	}
 
-// 	var skus []SKU
-// 	if err := c.database.Where("product_id = ?", productID).Find(&skus).Error; err != nil {
-// 		return nil, err
-// 	}
+	if err := c.database.WithContext(ctx).Create(&cart).Error; err != nil {
+		c.l.Error("failed to create cart", zap.Error(err))
+		return nil, err
+	}
 
-// 	for _, sku := range skus {
-// 		skuDetail := SKUDetail{
-// 			SKU: sku,
-// 		}
+	return &CreateCartResponse{
+		CartID: cart.ID,
+		UserID: cart.UserID,
+	}, nil
+}
 
-// 		// Get active price
-// 		var price Price
-// 		if err := c.database.Where("sku_id = ? AND active = true", sku.ID).
-// 			Order("effective_date DESC").
-// 			First(&price).Error; err != nil && err != gorm.ErrRecordNotFound {
-// 			return nil, err
-// 		}
-// 		skuDetail.Price = price
+func (c *catalogDataAccessor) AddToCartItem(ctx context.Context, arg *AddToCartItemRequest) (*AddToCartItemResponse, error) {
+	c.l.Info("add to cart item request",
+		zap.String("user_id", arg.CartID.String()),
+		zap.String("sku_id", arg.SkuID.String()),
+		zap.Int32("quantity", arg.Quantity))
 
-// 		// Get inventory
-// 		var inventory Inventory
-// 		if err := c.database.Where("sku_id = ?", sku.ID).First(&inventory).Error; err != nil && err != gorm.ErrRecordNotFound {
-// 			return nil, err
-// 		}
-// 		skuDetail.Inventory = inventory
+	cart := &Cart{}
 
-// 		// Get attributes
-// 		var attributes []SKUAttribute
-// 		if err := c.database.Where("sku_id = ?", sku.ID).Find(&attributes).Error; err != nil {
-// 			return nil, err
-// 		}
-// 		skuDetail.SKUAttributes = attributes
+	if err := c.database.WithContext(ctx).Where("cart_id = ?", arg.CartID).First(&cart).Error; err != nil {
+		c.l.Error("cart not found", zap.Error(err))
+		return nil, err
+	}
 
-// 		productDetail.SKUs = append(productDetail.SKUs, skuDetail)
-// 	}
+	sku := &SKU{}
+	if err := c.database.WithContext(ctx).Where("sku_id = ?", arg.SkuID).First(&sku).Error; err != nil {
+		c.l.Error("sku not found", zap.Error(err))
+		return nil, err
+	}
 
-// 	return &productDetail, nil
-// }
+	// Check if the SKU is already in the cart
+	var cartItems []CartItem
+	if err := c.database.WithContext(ctx).Where("cart_id = ?", cart.ID).Find(&cartItems).Error; err != nil {
+		if err != gorm.ErrRecordNotFound {
+			c.l.Error("failed to check if SKU is already in cart", zap.Error(err))
+			return nil, err
+		}
+	}
+
+	if len(cartItems) > 0 {
+		for _, cartItem := range cartItems {
+			if cartItem.SkuID == sku.ID {
+				c.l.Info("SKU already in cart", zap.String("sku_id", sku.ID.String()))
+				return &AddToCartItemResponse{
+					Cart:     Cart{ID: cartItem.ID},
+					CartItem: cartItems,
+				}, nil
+			}
+		}
+	}
+
+	cartItem := &CartItem{
+		CartID:   cart.ID,
+		SkuID:    sku.ID,
+		Quantity: arg.Quantity,
+	}
+
+	if err := c.database.WithContext(ctx).Create(&cartItem).Error; err != nil {
+		c.l.Error("failed to add to cart item", zap.Error(err))
+		return nil, err
+	}
+
+	cartItems = append(cartItems, *cartItem)
+
+	return &AddToCartItemResponse{
+		Cart:     Cart{ID: cartItem.ID},
+		CartItem: cartItems,
+	}, nil
+}

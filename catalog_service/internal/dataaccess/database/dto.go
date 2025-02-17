@@ -1,6 +1,10 @@
 package database
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // CreateProduct
 type CreateProductParams struct {
@@ -56,4 +60,24 @@ type ListProductRequest struct {
 
 type ListProductResponse struct {
 	Products []ProductDetail
+}
+
+type CreateCartRequest struct {
+	UserID uuid.UUID `json:"user_id"`
+}
+
+type CreateCartResponse struct {
+	CartID uuid.UUID `json:"cart_id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+type AddToCartItemRequest struct {
+	CartID   uuid.UUID `json:"cart_id"`
+	SkuID    uuid.UUID `json:"sku_id"`
+	Quantity int32     `json:"quantity"`
+}
+
+type AddToCartItemResponse struct {
+	Cart     Cart       `json:"cart"`
+	CartItem []CartItem `json:"cart_item"`
 }
