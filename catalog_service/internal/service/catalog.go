@@ -58,23 +58,23 @@ func convertProductResponse(dbResponse *database.ProductDetail) *pb.ProductWithS
 			CreatedAt: timestamppb.New(skuDetail.SKU.CreatedAt),
 			UpdatedAt: timestamppb.New(skuDetail.SKU.UpdatedAt),
 			CurrentPrice: &pb.Price{
-				Id:            skuDetail.Price.ID,
-				SkuId:         skuDetail.Price.SkuID.String(),
-				OriginalPrice: skuDetail.Price.OriginalPrice,
-				EffectiveDate: timestamppb.New(skuDetail.Price.EffectiveDate),
-				Active:        skuDetail.Price.Active,
+				Id:            skuDetail.SKU.Price.ID,
+				SkuId:         skuDetail.SKU.Price.SkuID.String(),
+				OriginalPrice: skuDetail.SKU.Price.OriginalPrice,
+				EffectiveDate: timestamppb.New(skuDetail.SKU.Price.EffectiveDate),
+				Active:        skuDetail.SKU.Price.Active,
 			},
 			Inventory: &pb.Inventory{
-				Id:           skuDetail.Inventory.ID,
-				SkuId:        skuDetail.Inventory.SkuID.String(),
-				Stock:        skuDetail.Inventory.Stock,
-				Reservations: string(skuDetail.Inventory.Reservations),
+				Id:           skuDetail.SKU.Inventory.ID,
+				SkuId:        skuDetail.SKU.Inventory.SkuID.String(),
+				Stock:        skuDetail.SKU.Inventory.Stock,
+				Reservations: string(skuDetail.SKU.Inventory.Reservations),
 			},
-			Attributes: make([]*pb.AttributeValue, 0, len(skuDetail.SKUAttributes)),
+			Attributes: make([]*pb.AttributeValue, 0, len(skuDetail.SKU.SKUAttributes)),
 		}
 
 		// Transform SKU attributes
-		for _, attr := range skuDetail.SKUAttributes {
+		for _, attr := range skuDetail.SKU.SKUAttributes {
 			sku.Attributes = append(sku.Attributes, &pb.AttributeValue{
 				AttributeId: attr.AttributeID,
 				Value:       attr.Value,
@@ -106,7 +106,7 @@ func (c *catalogService) CreateProduct(ctx context.Context, arg *pb.CreateProduc
 			Slug: skuProto.Slug,
 			Price: database.CreatePriceParams{
 				OriginalPrice: skuProto.OriginalPrice,
-				EffectiveDate: time.Now(), // You might want to get this from the request
+				EffectiveDate: time.Now(),
 			},
 			Inventory: database.CreateInventoryParams{
 				Stock: skuProto.InitialStock,
@@ -145,14 +145,14 @@ func (c *catalogService) CreateProduct(ctx context.Context, arg *pb.CreateProduc
 }
 
 func (c *catalogService) ListProduct(ctx context.Context, arg *pb.ListProductRequest) (*pb.ListProductResponse, error) {
-	products, err := c.catalogAccessor.ListProdudct(ctx, &database.ListProductRequest{
+	products, err := c.catalogAccessor.ListProducts(ctx, &database.ListProductRequest{
 		Page:     arg.GetPage(),
 		PageSize: arg.GetPageSize(),
 	})
 	if err != nil {
 		return nil, err
 	}
-
+	c.l.Info("len", zap.Int("len", len(products.Products)))
 	response := make([]*pb.ProductWithSKUs, 0, len(products.Products))
 
 	for _, product := range products.Products {

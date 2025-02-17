@@ -22,7 +22,7 @@ type Config struct {
 	DBUser              string `mapstructure:"DB_USER"`
 	DBPassword          string `mapstructure:"DB_PASSWORD"`
 	DBName              string `mapstructure:"DB_NAME"`
-	RedisAddres         string `mapstructure:"REDIS_ADDESS"`
+	RedisAddress        string `mapstructure:"REDIS_ADDRESS"`
 	EmailSenderName     string `mapstructure:"EMAIL_SENDER_NAME"`
 	EmailSenderAddress  string `mapstructure:"EMAIL_SENDER_ADDRESS"`
 	EmailSenderPassword string `mapstructure:"EMAIL_SENDER_PASSWORD"`

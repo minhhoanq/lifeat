@@ -2,23 +2,27 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	pb "github.com/minhhoanq/lifeat/catalog_service/internal/generated/catalog_service"
 	"github.com/minhhoanq/lifeat/catalog_service/internal/service"
 	"github.com/minhhoanq/lifeat/common/logger"
+	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
 	pb.UnimplementedCatalogServiceServer
 	catalogService service.CatalogService
 	l              logger.Interface
+	redisClient    *redis.Client
 }
 
-func NewHandler(catalogService service.CatalogService, l logger.Interface) (pb.CatalogServiceServer, error) {
+func NewHandler(catalogService service.CatalogService, l logger.Interface, redisClient *redis.Client) (pb.CatalogServiceServer, error) {
 	return &Handler{
 		catalogService: catalogService,
 		l:              l,
+		redisClient:    redisClient,
 	}, nil
 }
 
@@ -33,5 +37,33 @@ func (h *Handler) CreateProduct(ctx context.Context, arg *pb.CreateProductReques
 }
 
 func (h *Handler) ListProduct(ctx context.Context, arg *pb.ListProductRequest) (*pb.ListProductResponse, error) {
-	return nil, nil
+	if h.redisClient.Get(context.Background(), "products").Val() != "" {
+		h.l.Info("Get products from redis")
+		// convert string to byte
+		bytesProducts, err := h.redisClient.Get(context.Background(), "products").Bytes()
+		if err != nil {
+			return nil, err
+		}
+		products := &pb.ListProductResponse{}
+		err = json.Unmarshal(bytesProducts, &products)
+		if err != nil {
+			return nil, err
+		}
+		return products, nil
+	}
+	// get products from database
+	products, err := h.catalogService.ListProduct(ctx, arg)
+	jsonProducts, err := json.Marshal(products)
+	if err != nil {
+		return nil, err
+	}
+
+	// set products to redis
+	h.redisClient.Set(context.Background(), "products", jsonProducts, 0)
+	h.l.Info("Get products from database")
+
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
 }

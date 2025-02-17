@@ -40,15 +40,12 @@ type CreateProductResponse struct {
 }
 
 type ProductDetail struct {
-	Product Product
-	SKUs    []SKUDetail
+	Product Product     `json:"product"`
+	SKUs    []SKUDetail `json:"skus"`
 }
 
 type SKUDetail struct {
-	SKU           SKU
-	Price         Price
-	Inventory     Inventory
-	SKUAttributes []SKUAttribute
+	SKU SKU `json:"sku"`
 }
 
 // ListProduct
