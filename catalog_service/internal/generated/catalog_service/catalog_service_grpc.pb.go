@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	CatalogService_CreateProduct_FullMethodName = "/catalog.CatalogService/CreateProduct"
 	CatalogService_ListProduct_FullMethodName   = "/catalog.CatalogService/ListProduct"
+	CatalogService_CreateCart_FullMethodName    = "/catalog.CatalogService/CreateCart"
+	CatalogService_AddToCartItem_FullMethodName = "/catalog.CatalogService/AddToCartItem"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
@@ -31,6 +33,8 @@ const (
 type CatalogServiceClient interface {
 	CreateProduct(ctx context.Context, in *CreateProductRequest, opts ...grpc.CallOption) (*CreateProductResponse, error)
 	ListProduct(ctx context.Context, in *ListProductRequest, opts ...grpc.CallOption) (*ListProductResponse, error)
+	CreateCart(ctx context.Context, in *CreateCartRequest, opts ...grpc.CallOption) (*CreateCartResponse, error)
+	AddToCartItem(ctx context.Context, in *AddToCartItemRequest, opts ...grpc.CallOption) (*AddToCartItemResponse, error)
 }
 
 type catalogServiceClient struct {
@@ -61,6 +65,26 @@ func (c *catalogServiceClient) ListProduct(ctx context.Context, in *ListProductR
 	return out, nil
 }
 
+func (c *catalogServiceClient) CreateCart(ctx context.Context, in *CreateCartRequest, opts ...grpc.CallOption) (*CreateCartResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateCartResponse)
+	err := c.cc.Invoke(ctx, CatalogService_CreateCart_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) AddToCartItem(ctx context.Context, in *AddToCartItemRequest, opts ...grpc.CallOption) (*AddToCartItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddToCartItemResponse)
+	err := c.cc.Invoke(ctx, CatalogService_AddToCartItem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
@@ -69,6 +93,8 @@ func (c *catalogServiceClient) ListProduct(ctx context.Context, in *ListProductR
 type CatalogServiceServer interface {
 	CreateProduct(context.Context, *CreateProductRequest) (*CreateProductResponse, error)
 	ListProduct(context.Context, *ListProductRequest) (*ListProductResponse, error)
+	CreateCart(context.Context, *CreateCartRequest) (*CreateCartResponse, error)
+	AddToCartItem(context.Context, *AddToCartItemRequest) (*AddToCartItemResponse, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -84,6 +110,12 @@ func (UnimplementedCatalogServiceServer) CreateProduct(context.Context, *CreateP
 }
 func (UnimplementedCatalogServiceServer) ListProduct(context.Context, *ListProductRequest) (*ListProductResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProduct not implemented")
+}
+func (UnimplementedCatalogServiceServer) CreateCart(context.Context, *CreateCartRequest) (*CreateCartResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateCart not implemented")
+}
+func (UnimplementedCatalogServiceServer) AddToCartItem(context.Context, *AddToCartItemRequest) (*AddToCartItemResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddToCartItem not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -142,6 +174,42 @@ func _CatalogService_ListProduct_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CatalogService_CreateCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).CreateCart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_CreateCart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).CreateCart(ctx, req.(*CreateCartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_AddToCartItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddToCartItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).AddToCartItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_AddToCartItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).AddToCartItem(ctx, req.(*AddToCartItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -156,6 +224,14 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProduct",
 			Handler:    _CatalogService_ListProduct_Handler,
+		},
+		{
+			MethodName: "CreateCart",
+			Handler:    _CatalogService_CreateCart_Handler,
+		},
+		{
+			MethodName: "AddToCartItem",
+			Handler:    _CatalogService_AddToCartItem_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	pb "github.com/minhhoanq/lifeat/catalog_service/internal/generated/catalog_service"
@@ -37,33 +36,49 @@ func (h *Handler) CreateProduct(ctx context.Context, arg *pb.CreateProductReques
 }
 
 func (h *Handler) ListProduct(ctx context.Context, arg *pb.ListProductRequest) (*pb.ListProductResponse, error) {
-	if h.redisClient.Get(context.Background(), "products").Val() != "" {
-		h.l.Info("Get products from redis")
-		// convert string to byte
-		bytesProducts, err := h.redisClient.Get(context.Background(), "products").Bytes()
-		if err != nil {
-			return nil, err
-		}
-		products := &pb.ListProductResponse{}
-		err = json.Unmarshal(bytesProducts, &products)
-		if err != nil {
-			return nil, err
-		}
-		return products, nil
-	}
+	// if h.redisClient.Get(context.Background(), "products").Val() != "" {
+	// 	h.l.Info("Get products from redis")
+	// 	// convert string to byte
+	// 	bytesProducts, err := h.redisClient.Get(context.Background(), "products").Bytes()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	products := &pb.ListProductResponse{}
+	// 	err = json.Unmarshal(bytesProducts, &products)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	return products, nil
+	// }
 	// get products from database
 	products, err := h.catalogService.ListProduct(ctx, arg)
-	jsonProducts, err := json.Marshal(products)
-	if err != nil {
-		return nil, err
-	}
+	// jsonProducts, err := json.Marshal(products)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	// set products to redis
-	h.redisClient.Set(context.Background(), "products", jsonProducts, 0)
-	h.l.Info("Get products from database")
+	// // set products to redis
+	// h.redisClient.Set(context.Background(), "products", jsonProducts, 0)
+	// h.l.Info("Get products from database")
 
 	if err != nil {
 		return nil, err
 	}
 	return products, nil
+}
+
+func (h *Handler) CreateCart(ctx context.Context, arg *pb.CreateCartRequest) (*pb.CreateCartResponse, error) {
+	cart, err := h.catalogService.CreateCart(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
+	return cart, nil
+}
+
+func (h *Handler) AddToCartItem(ctx context.Context, arg *pb.AddToCartItemRequest) (*pb.AddToCartItemResponse, error) {
+	cart, err := h.catalogService.AddToCartItem(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
+	return cart, nil
 }

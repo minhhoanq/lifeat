@@ -16,6 +16,70 @@
     "application/json"
   ],
   "paths": {
+    "/catalog.CatalogService/AddToCartItem": {
+      "post": {
+        "operationId": "CatalogService_AddToCartItem",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/catalogAddToCartItemResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/catalogAddToCartItemRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CatalogService"
+        ]
+      }
+    },
+    "/catalog.CatalogService/CreateCart": {
+      "post": {
+        "operationId": "CatalogService_CreateCart",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/catalogCreateCartResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/catalogCreateCartRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CatalogService"
+        ]
+      }
+    },
     "/catalog.CatalogService/CreateProduct": {
       "post": {
         "operationId": "CatalogService_CreateProduct",
@@ -82,6 +146,29 @@
     }
   },
   "definitions": {
+    "catalogAddToCartItemRequest": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/catalogCartItem"
+        }
+      }
+    },
+    "catalogAddToCartItemResponse": {
+      "type": "object",
+      "properties": {
+        "cartId": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/catalogCartItem"
+          }
+        }
+      }
+    },
     "catalogAttributeValue": {
       "type": "object",
       "properties": {
@@ -94,6 +181,43 @@
         }
       },
       "title": "Attribute value pair"
+    },
+    "catalogCartItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "cartId": {
+          "type": "string"
+        },
+        "skuId": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "catalogCreateCartRequest": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        }
+      }
+    },
+    "catalogCreateCartResponse": {
+      "type": "object",
+      "properties": {
+        "cartId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        }
+      }
     },
     "catalogCreateProductRequest": {
       "type": "object",

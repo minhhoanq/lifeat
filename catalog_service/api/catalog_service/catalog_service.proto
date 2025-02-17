@@ -10,6 +10,8 @@ option go_package = "generated/catalog_service";
 service CatalogService {
   rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
   rpc ListProduct(ListProductRequest) returns (ListProductResponse);
+  rpc CreateCart(CreateCartRequest) returns (CreateCartResponse);
+  rpc AddToCartItem(AddToCartItemRequest) returns (AddToCartItemResponse);
 }
 
 // Attribute value pair

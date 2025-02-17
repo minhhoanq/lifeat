@@ -23,9 +23,9 @@ type SKU struct {
 	ProductID     uuid.UUID      `json:"product_id"`
 	Name          string         `json:"name"`
 	Slug          string         `json:"slug"`
-	Price         Price          `json:"price"`
-	Inventory     Inventory      `json:"inventory"`
-	SKUAttributes []SKUAttribute `json:"attributes"`
+	Price         Price          `gorm:"foreignKey:SkuID"`
+	Inventory     Inventory      `gorm:"foreignKey:SkuID"`
+	SKUAttributes []SKUAttribute `gorm:"foreignKey:SkuID"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 }

@@ -167,10 +167,6 @@ func (c *catalogDataAccessor) ListProducts(ctx context.Context, arg *ListProduct
 
 	offset := (arg.Page - 1) * arg.PageSize
 
-	fmt.Println("page", arg.Page)
-	fmt.Println("page_size", arg.PageSize)
-	fmt.Println("offset", offset)
-
 	query := `
 		WITH limited_products AS (
 			SELECT * FROM products
@@ -282,13 +278,13 @@ func (c *catalogDataAccessor) AddToCartItem(ctx context.Context, arg *AddToCartI
 
 	cart := &Cart{}
 
-	if err := c.database.WithContext(ctx).Where("cart_id = ?", arg.CartID).First(&cart).Error; err != nil {
+	if err := c.database.WithContext(ctx).Where("id = ?", arg.CartID).First(&cart).Error; err != nil {
 		c.l.Error("cart not found", zap.Error(err))
 		return nil, err
 	}
 
 	sku := &SKU{}
-	if err := c.database.WithContext(ctx).Where("sku_id = ?", arg.SkuID).First(&sku).Error; err != nil {
+	if err := c.database.WithContext(ctx).Select("id").Where("id = ?", arg.SkuID).First(&sku).Error; err != nil {
 		c.l.Error("sku not found", zap.Error(err))
 		return nil, err
 	}
@@ -304,19 +300,16 @@ func (c *catalogDataAccessor) AddToCartItem(ctx context.Context, arg *AddToCartI
 
 	if len(cartItems) > 0 {
 		for _, cartItem := range cartItems {
-			if cartItem.SkuID == sku.ID {
-				c.l.Info("SKU already in cart", zap.String("sku_id", sku.ID.String()))
-				return &AddToCartItemResponse{
-					Cart:     Cart{ID: cartItem.ID},
-					CartItem: cartItems,
-				}, nil
+			if cartItem.SkuID == arg.SkuID {
+				c.l.Info("SKU already in cart", zap.String("sku_id", arg.SkuID.String()))
+				return nil, fmt.Errorf("SKU already in cart")
 			}
 		}
 	}
 
 	cartItem := &CartItem{
 		CartID:   cart.ID,
-		SkuID:    sku.ID,
+		SkuID:    arg.SkuID,
 		Quantity: arg.Quantity,
 	}
 
