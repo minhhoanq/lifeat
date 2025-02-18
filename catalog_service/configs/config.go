@@ -14,6 +14,7 @@ type Config struct {
 	// Mail     Mail     `mapstructure:"mail"`
 	Environment         string `mapstructure:"ENVIRONMENT"`
 	GRPCServerAddress   string `mapstructure:"GRPC_SERVER_ADDRESS"`
+	GRPCUserAddress     string `mapstructure:"GRPC_USER_ADDRESS"`
 	LogLevel            string `mapstructure:"LOG_LEVEL"`
 	DBDriver            string `mapstructure:"DB_DRIVER"`
 	DBSource            string `mapstructure:"DB_SOURCE"`

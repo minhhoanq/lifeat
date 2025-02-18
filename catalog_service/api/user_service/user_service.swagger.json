@@ -16,14 +16,14 @@
     "application/json"
   ],
   "paths": {
-    "/user_service.UserService/GetUser": {
+    "/catalog.UserService/GetUser": {
       "post": {
         "operationId": "UserService_GetUser",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/user_serviceGetUserResponse"
+              "$ref": "#/definitions/catalogGetUserResponse"
             }
           },
           "default": {
@@ -39,7 +39,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/user_serviceGetUserRequest"
+              "$ref": "#/definitions/catalogGetUserRequest"
             }
           }
         ],
@@ -48,14 +48,14 @@
         ]
       }
     },
-    "/user_service.UserService/Signin": {
+    "/catalog.UserService/Signin": {
       "post": {
         "operationId": "UserService_Signin",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/user_serviceSigninResponse"
+              "$ref": "#/definitions/catalogSigninResponse"
             }
           },
           "default": {
@@ -71,7 +71,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/user_serviceSigninRequest"
+              "$ref": "#/definitions/catalogSigninRequest"
             }
           }
         ],
@@ -80,14 +80,14 @@
         ]
       }
     },
-    "/user_service.UserService/Signup": {
+    "/catalog.UserService/Signup": {
       "post": {
         "operationId": "UserService_Signup",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/user_serviceSignupResponse"
+              "$ref": "#/definitions/catalogSignupResponse"
             }
           },
           "default": {
@@ -103,7 +103,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/user_serviceSignupRequest"
+              "$ref": "#/definitions/catalogSignupRequest"
             }
           }
         ],
@@ -114,6 +114,103 @@
     }
   },
   "definitions": {
+    "catalogGetUserRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "catalogGetUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/catalogUser"
+        }
+      }
+    },
+    "catalogSigninRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "catalogSigninResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/catalogUser"
+        },
+        "sessionId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        },
+        "accessTokenExpiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "refreshTokenExpiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "catalogSignupRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "catalogSignupResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/catalogUser"
+        }
+      }
+    },
+    "catalogUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "passwordChangedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -139,103 +236,6 @@
             "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
-        }
-      }
-    },
-    "user_serviceGetUserRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        }
-      }
-    },
-    "user_serviceGetUserResponse": {
-      "type": "object",
-      "properties": {
-        "user": {
-          "$ref": "#/definitions/user_serviceUser"
-        }
-      }
-    },
-    "user_serviceSigninRequest": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        }
-      }
-    },
-    "user_serviceSigninResponse": {
-      "type": "object",
-      "properties": {
-        "user": {
-          "$ref": "#/definitions/user_serviceUser"
-        },
-        "sessionId": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "accessToken": {
-          "type": "string"
-        },
-        "refreshToken": {
-          "type": "string"
-        },
-        "accessTokenExpiresAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "refreshTokenExpiresAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "user_serviceSignupRequest": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        }
-      }
-    },
-    "user_serviceSignupResponse": {
-      "type": "object",
-      "properties": {
-        "user": {
-          "$ref": "#/definitions/user_serviceUser"
-        }
-      }
-    },
-    "user_serviceUser": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "passwordChangedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     }

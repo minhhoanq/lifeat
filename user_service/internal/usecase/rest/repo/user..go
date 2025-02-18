@@ -17,6 +17,7 @@ func (q *SQLStore) GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User,
 	var user *entity.User
 	result := q.db.WithContext(ctx).First(&user, id)
 	if result.Error != nil {
+		fmt.Println("[ERROR] UserRepo - GetUser - User ID", result.Error)
 		return nil, result.Error
 	}
 

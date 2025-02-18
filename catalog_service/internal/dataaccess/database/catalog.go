@@ -10,10 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Models for database entities
-
-// Request/Response structures
-
 // Interface definition
 type CatalogDataAccessor interface {
 	CreateProduct(ctx context.Context, arg *CreateProductParams) (*CreateProductResponse, error)
@@ -266,7 +262,7 @@ func (c *catalogDataAccessor) CreateCart(ctx context.Context, arg *CreateCartReq
 
 	return &CreateCartResponse{
 		CartID: cart.ID,
-		UserID: cart.UserID,
+		UserID: arg.UserID,
 	}, nil
 }
 

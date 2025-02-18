@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	pbuser "github.com/minhhoanq/lifeat/user_service/internal/controller/grpc/v1/user_service"
 	"github.com/minhhoanq/lifeat/user_service/internal/entity"
@@ -104,5 +105,21 @@ func (server *GrpcServer) Signin(ctx context.Context, arg *pbuser.SigninRequest)
 		AccessTokenExpiresAt:  timestamppb.New(accessPayload.ExpiredAt),
 		RefreshTokenExpiresAt: timestamppb.New(refreshPayload.ExpiredAt),
 		User:                  convertUser(user),
+	}, nil
+}
+
+func (server *GrpcServer) GetUser(ctx context.Context, arg *pbuser.GetUserRequest) (*pbuser.GetUserResponse, error) {
+	userID, err := uuid.Parse(arg.Id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id: %v", err)
+	}
+	user, err := server.q.GetUserByID(ctx, userID)
+	if err != nil {
+		fmt.Println("error get user by id", err)
+		return nil, err
+	}
+
+	return &pbuser.GetUserResponse{
+		User: convertUser(user),
 	}, nil
 }

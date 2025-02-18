@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/minhhoanq/lifeat/catalog_service/internal/dataaccess/database"
 	pb "github.com/minhhoanq/lifeat/catalog_service/internal/generated/catalog_service"
+	"github.com/minhhoanq/lifeat/catalog_service/internal/generated/user_service"
 	"github.com/minhhoanq/lifeat/common/logger"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -22,16 +23,18 @@ type CatalogService interface {
 }
 
 type catalogService struct {
-	db              *gorm.DB
-	l               logger.Interface
-	catalogAccessor database.CatalogDataAccessor
+	db                *gorm.DB
+	l                 logger.Interface
+	catalogAccessor   database.CatalogDataAccessor
+	userServiceClient user_service.UserServiceClient
 }
 
-func NewCatalogService(db *gorm.DB, l logger.Interface, catalogAccessor database.CatalogDataAccessor) CatalogService {
+func NewCatalogService(db *gorm.DB, l logger.Interface, catalogAccessor database.CatalogDataAccessor, userServiceClient user_service.UserServiceClient) CatalogService {
 	return &catalogService{
-		db:              db,
-		l:               l,
-		catalogAccessor: catalogAccessor,
+		db:                db,
+		l:                 l,
+		catalogAccessor:   catalogAccessor,
+		userServiceClient: userServiceClient,
 	}
 }
 
@@ -168,14 +171,22 @@ func (c *catalogService) ListProduct(ctx context.Context, arg *pb.ListProductReq
 }
 
 func (c *catalogService) CreateCart(ctx context.Context, arg *pb.CreateCartRequest) (*pb.CreateCartResponse, error) {
-	uuidUserID, err := uuid.Parse(arg.UserId)
+
+	user, err := c.userServiceClient.GetUser(ctx, &user_service.GetUserRequest{
+		Id: arg.UserId,
+	})
 	if err != nil {
 		c.l.Error("failed to parse user id", zap.Error(err))
 		return nil, err
 	}
 
+	userID, err := uuid.Parse(user.User.Id)
+	if err != nil {
+		return nil, err
+	}
+
 	cart, err := c.catalogAccessor.CreateCart(ctx, &database.CreateCartRequest{
-		UserID: uuidUserID,
+		UserID: userID,
 	})
 	if err != nil {
 		c.l.Error("failed to create cart", zap.Error(err))

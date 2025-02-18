@@ -8,6 +8,7 @@ import (
 
 func convertUser(user *entity.User) *pbuser.User {
 	return &pbuser.User{
+		Id:                user.ID.String(),
 		Username:          user.Username,
 		Email:             user.Email,
 		PasswordChangedAt: timestamppb.New(user.PasswordChangeAt),
