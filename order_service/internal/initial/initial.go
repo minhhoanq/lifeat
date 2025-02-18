@@ -14,12 +14,11 @@ func InitialServer(cfg config.Config, l logger.Interface) (grpc.Server, error) {
 		return nil, err
 	}
 
+	orderDataAccessor := database.NewOrderDataAccessor(db, l)
 	// Initialize the service
-	orderService := service.NewOrderService(db.DB, l)
-
+	orderService := service.NewOrderService(l, orderDataAccessor)
 	// Initialize the handler
 	handler, err := grpc.NewHandler(l, orderService)
-
 	// Initialize the server
 	grpcServer := grpc.NewGRPCServer(cfg, handler, l)
 
