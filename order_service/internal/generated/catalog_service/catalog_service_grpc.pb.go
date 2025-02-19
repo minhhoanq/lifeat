@@ -19,11 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CatalogService_CreateProduct_FullMethodName = "/catalog.CatalogService/CreateProduct"
-	CatalogService_ListProduct_FullMethodName   = "/catalog.CatalogService/ListProduct"
-	CatalogService_CreateCart_FullMethodName    = "/catalog.CatalogService/CreateCart"
-	CatalogService_AddToCartItem_FullMethodName = "/catalog.CatalogService/AddToCartItem"
-	CatalogService_GetSKU_FullMethodName        = "/catalog.CatalogService/GetSKU"
+	CatalogService_CreateProduct_FullMethodName      = "/catalog.CatalogService/CreateProduct"
+	CatalogService_ListProduct_FullMethodName        = "/catalog.CatalogService/ListProduct"
+	CatalogService_CreateCart_FullMethodName         = "/catalog.CatalogService/CreateCart"
+	CatalogService_AddToCartItem_FullMethodName      = "/catalog.CatalogService/AddToCartItem"
+	CatalogService_GetSKU_FullMethodName             = "/catalog.CatalogService/GetSKU"
+	CatalogService_GetInventorySKU_FullMethodName    = "/catalog.CatalogService/GetInventorySKU"
+	CatalogService_UpdateInventorySKU_FullMethodName = "/catalog.CatalogService/UpdateInventorySKU"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
@@ -37,6 +39,8 @@ type CatalogServiceClient interface {
 	CreateCart(ctx context.Context, in *CreateCartRequest, opts ...grpc.CallOption) (*CreateCartResponse, error)
 	AddToCartItem(ctx context.Context, in *AddToCartItemRequest, opts ...grpc.CallOption) (*AddToCartItemResponse, error)
 	GetSKU(ctx context.Context, in *GetSKURequest, opts ...grpc.CallOption) (*GetSKUResponse, error)
+	GetInventorySKU(ctx context.Context, in *GetInventorySKURequest, opts ...grpc.CallOption) (*GetInventorySKUResponse, error)
+	UpdateInventorySKU(ctx context.Context, in *UpdateInventorySKURequest, opts ...grpc.CallOption) (*UpdateInventorySKUResponse, error)
 }
 
 type catalogServiceClient struct {
@@ -97,6 +101,26 @@ func (c *catalogServiceClient) GetSKU(ctx context.Context, in *GetSKURequest, op
 	return out, nil
 }
 
+func (c *catalogServiceClient) GetInventorySKU(ctx context.Context, in *GetInventorySKURequest, opts ...grpc.CallOption) (*GetInventorySKUResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetInventorySKUResponse)
+	err := c.cc.Invoke(ctx, CatalogService_GetInventorySKU_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) UpdateInventorySKU(ctx context.Context, in *UpdateInventorySKURequest, opts ...grpc.CallOption) (*UpdateInventorySKUResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateInventorySKUResponse)
+	err := c.cc.Invoke(ctx, CatalogService_UpdateInventorySKU_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
@@ -108,6 +132,8 @@ type CatalogServiceServer interface {
 	CreateCart(context.Context, *CreateCartRequest) (*CreateCartResponse, error)
 	AddToCartItem(context.Context, *AddToCartItemRequest) (*AddToCartItemResponse, error)
 	GetSKU(context.Context, *GetSKURequest) (*GetSKUResponse, error)
+	GetInventorySKU(context.Context, *GetInventorySKURequest) (*GetInventorySKUResponse, error)
+	UpdateInventorySKU(context.Context, *UpdateInventorySKURequest) (*UpdateInventorySKUResponse, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -132,6 +158,12 @@ func (UnimplementedCatalogServiceServer) AddToCartItem(context.Context, *AddToCa
 }
 func (UnimplementedCatalogServiceServer) GetSKU(context.Context, *GetSKURequest) (*GetSKUResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSKU not implemented")
+}
+func (UnimplementedCatalogServiceServer) GetInventorySKU(context.Context, *GetInventorySKURequest) (*GetInventorySKUResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInventorySKU not implemented")
+}
+func (UnimplementedCatalogServiceServer) UpdateInventorySKU(context.Context, *UpdateInventorySKURequest) (*UpdateInventorySKUResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInventorySKU not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -244,6 +276,42 @@ func _CatalogService_GetSKU_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CatalogService_GetInventorySKU_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInventorySKURequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).GetInventorySKU(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_GetInventorySKU_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).GetInventorySKU(ctx, req.(*GetInventorySKURequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_UpdateInventorySKU_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateInventorySKURequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).UpdateInventorySKU(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_UpdateInventorySKU_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).UpdateInventorySKU(ctx, req.(*UpdateInventorySKURequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -270,6 +338,14 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSKU",
 			Handler:    _CatalogService_GetSKU_Handler,
+		},
+		{
+			MethodName: "GetInventorySKU",
+			Handler:    _CatalogService_GetInventorySKU_Handler,
+		},
+		{
+			MethodName: "UpdateInventorySKU",
+			Handler:    _CatalogService_UpdateInventorySKU_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

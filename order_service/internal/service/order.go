@@ -49,6 +49,14 @@ func (o *orderService) CreateOrder(ctx context.Context, arg *pb.CreateOrderReque
 			return nil, fmt.Errorf("invalid product", err)
 		}
 
+		inventory, err := o.catalogServiceClient.GetInventorySKU(ctx, &catalog_service.GetInventorySKURequest{
+			SkuId: sku.Sku.Id,
+		})
+
+		if item.Quantity-inventory.Inventory.Stock < 0 {
+			return nil, fmt.Errorf("quantity > stock")
+		}
+
 		order.OrderItems = append(order.OrderItems, database.CreateOrderItemRequest{
 			SkuID:    item.SkuId,
 			Quantity: item.Quantity,

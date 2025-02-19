@@ -86,3 +86,11 @@ func (h *Handler) AddToCartItem(ctx context.Context, arg *pb.AddToCartItemReques
 func (h *Handler) GetSKU(ctx context.Context, arg *pb.GetSKURequest) (*pb.GetSKUResponse, error) {
 	return h.catalogService.GetSKU(ctx, arg)
 }
+
+func (h *Handler) GetInventorySKU(ctx context.Context, arg *pb.GetInventorySKURequest) (*pb.GetInventorySKUResponse, error) {
+	return h.catalogService.GetInventorySKU(ctx, arg)
+}
+
+func (h *Handler) UpdateInventorySKU(ctx context.Context, arg *pb.UpdateInventorySKURequest) (*pb.UpdateInventorySKUResponse, error) {
+	return h.catalogService.UpdateInventorySKU(ctx, arg)
+}

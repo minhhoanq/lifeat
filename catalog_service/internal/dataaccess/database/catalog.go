@@ -18,6 +18,8 @@ type CatalogDataAccessor interface {
 	CreateCart(ctx context.Context, arg *CreateCartRequest) (*CreateCartResponse, error)
 	AddToCartItem(ctx context.Context, arg *AddToCartItemRequest) (*AddToCartItemResponse, error)
 	GetSKU(ctx context.Context, arg *GetSKURequest) (*GetSKUResponse, error)
+	GetInventorySKU(ctx context.Context, arg *GetInventorySKURequest) (*GetInventorySKUResponse, error)
+	UpdateInventorySKU(ctx context.Context, arg *UpdateInventorySKURequest) (*UpdateInventorySKUResponse, error)
 }
 
 type catalogDataAccessor struct {
@@ -339,9 +341,47 @@ func (c *catalogDataAccessor) GetSKU(ctx context.Context, arg *GetSKURequest) (*
 		return nil, fmt.Errorf("sku not found")
 	}
 
-	fmt.Println("sku", sku)
-
 	return &GetSKUResponse{
 		SKU: sku,
+	}, nil
+}
+
+func (c *catalogDataAccessor) GetInventorySKU(ctx context.Context, arg *GetInventorySKURequest) (*GetInventorySKUResponse, error) {
+	var inventory Inventory
+	fmt.Println("sku id: ", arg.SkuID)
+	if err := c.database.WithContext(ctx).Raw(`select * from inventories where sku_id = ?`, arg.SkuID).Scan(&inventory).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("inventory not found")
+		}
+		return nil, err
+	}
+
+	return &GetInventorySKUResponse{
+		Inventory: inventory,
+	}, nil
+}
+
+func (c *catalogDataAccessor) UpdateInventorySKU(ctx context.Context, arg *UpdateInventorySKURequest) (*UpdateInventorySKUResponse, error) {
+	quantity := arg.Quantity
+	fmt.Println("quantity", quantity)
+
+	query := `
+        UPDATE inventories 
+        SET stock = COALESCE(stock - COALESCE($1, 0), stock)
+        WHERE sku_id = $2
+          AND stock >= COALESCE($1, 0)
+        RETURNING *
+    `
+
+	var inventory Inventory
+	fmt.Println("quantity", quantity)
+
+	if err := c.database.WithContext(ctx).Raw(query, quantity, arg.SkuID).Scan(&inventory).Error; err != nil {
+		return nil, fmt.Errorf("failed to update inventory")
+	}
+	fmt.Println("updated inventory", inventory)
+
+	return &UpdateInventorySKUResponse{
+		Inventory: inventory,
 	}, nil
 }

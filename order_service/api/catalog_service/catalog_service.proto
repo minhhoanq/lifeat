@@ -13,6 +13,8 @@ service CatalogService {
   rpc CreateCart(CreateCartRequest) returns (CreateCartResponse);
   rpc AddToCartItem(AddToCartItemRequest) returns (AddToCartItemResponse);
   rpc GetSKU(GetSKURequest) returns (GetSKUResponse);
+  rpc GetInventorySKU(GetInventorySKURequest) returns (GetInventorySKUResponse);
+  rpc UpdateInventorySKU(UpdateInventorySKURequest) returns (UpdateInventorySKUResponse);
 }
 
 // Attribute value pair
@@ -20,8 +22,6 @@ message AttributeValue {
   int32 attribute_id = 1;
   string value = 2;
 }
-
-
 
 // Product entity
 message Product {
@@ -139,4 +139,21 @@ message GetSKURequest {
 
 message GetSKUResponse {
   SKU sku = 1;
+}
+
+message GetInventorySKURequest {
+  string sku_id = 1;
+}
+
+message GetInventorySKUResponse {
+  Inventory inventory = 1;
+}
+
+message UpdateInventorySKURequest {
+  string sku_id = 1;
+  int32 quantity = 2;
+}
+
+message UpdateInventorySKUResponse {
+  Inventory inventory = 1;
 }

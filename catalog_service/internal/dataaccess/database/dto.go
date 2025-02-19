@@ -89,3 +89,20 @@ type GetSKURequest struct {
 type GetSKUResponse struct {
 	SKU SKU `json:"sku"`
 }
+
+type GetInventorySKURequest struct {
+	SkuID uuid.UUID `json:"sku_id"`
+}
+
+type GetInventorySKUResponse struct {
+	Inventory Inventory `json:"inventory"`
+}
+
+type UpdateInventorySKURequest struct {
+	SkuID    uuid.UUID `json:"sku_id"`
+	Quantity int32     `json:"quantitty"`
+}
+
+type UpdateInventorySKUResponse struct {
+	Inventory Inventory `json:"inventory"`
+}

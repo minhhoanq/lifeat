@@ -112,6 +112,38 @@
         ]
       }
     },
+    "/catalog.CatalogService/GetInventorySKU": {
+      "post": {
+        "operationId": "CatalogService_GetInventorySKU",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/catalogGetInventorySKUResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/catalogGetInventorySKURequest"
+            }
+          }
+        ],
+        "tags": [
+          "CatalogService"
+        ]
+      }
+    },
     "/catalog.CatalogService/GetSKU": {
       "post": {
         "operationId": "CatalogService_GetSKU",
@@ -168,6 +200,38 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/catalogListProductRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CatalogService"
+        ]
+      }
+    },
+    "/catalog.CatalogService/UpdateInventorySKU": {
+      "post": {
+        "operationId": "CatalogService_UpdateInventorySKU",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/catalogUpdateInventorySKUResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/catalogUpdateInventorySKURequest"
             }
           }
         ],
@@ -292,6 +356,22 @@
         }
       },
       "title": "Response message for product creation"
+    },
+    "catalogGetInventorySKURequest": {
+      "type": "object",
+      "properties": {
+        "skuId": {
+          "type": "string"
+        }
+      }
+    },
+    "catalogGetInventorySKUResponse": {
+      "type": "object",
+      "properties": {
+        "inventory": {
+          "$ref": "#/definitions/catalogInventory"
+        }
+      }
     },
     "catalogGetSKURequest": {
       "type": "object",
@@ -493,6 +573,26 @@
         }
       },
       "title": "SKU creation information"
+    },
+    "catalogUpdateInventorySKURequest": {
+      "type": "object",
+      "properties": {
+        "skuId": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "catalogUpdateInventorySKUResponse": {
+      "type": "object",
+      "properties": {
+        "inventory": {
+          "$ref": "#/definitions/catalogInventory"
+        }
+      }
     },
     "protobufAny": {
       "type": "object",

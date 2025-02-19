@@ -21,6 +21,8 @@ type CatalogService interface {
 	CreateCart(ctx context.Context, arg *pb.CreateCartRequest) (*pb.CreateCartResponse, error)
 	AddToCartItem(ctx context.Context, arg *pb.AddToCartItemRequest) (*pb.AddToCartItemResponse, error)
 	GetSKU(ctx context.Context, arg *pb.GetSKURequest) (*pb.GetSKUResponse, error)
+	GetInventorySKU(ctx context.Context, arg *pb.GetInventorySKURequest) (*pb.GetInventorySKUResponse, error)
+	UpdateInventorySKU(ctx context.Context, arg *pb.UpdateInventorySKURequest) (*pb.UpdateInventorySKUResponse, error)
 }
 
 type catalogService struct {
@@ -267,6 +269,54 @@ func (c *catalogService) GetSKU(ctx context.Context, arg *pb.GetSKURequest) (*pb
 			AttributeId: item.AttributeID,
 			Value:       item.Value,
 		})
+	}
+
+	return response, nil
+}
+
+func (c *catalogService) GetInventorySKU(ctx context.Context, arg *pb.GetInventorySKURequest) (*pb.GetInventorySKUResponse, error) {
+	skuID, err := uuid.Parse(arg.SkuId)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := c.catalogAccessor.GetInventorySKU(ctx, &database.GetInventorySKURequest{
+		SkuID: skuID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	response := &pb.GetInventorySKUResponse{
+		Inventory: &pb.Inventory{
+			Id:           result.Inventory.ID,
+			SkuId:        result.Inventory.SkuID.String(),
+			Stock:        result.Inventory.Stock,
+			Reservations: string(result.Inventory.Reservations),
+		},
+	}
+
+	return response, nil
+}
+
+func (c *catalogService) UpdateInventorySKU(ctx context.Context, arg *pb.UpdateInventorySKURequest) (*pb.UpdateInventorySKUResponse, error) {
+	skuID, err := uuid.Parse(arg.SkuId)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := c.catalogAccessor.UpdateInventorySKU(ctx, &database.UpdateInventorySKURequest{
+		SkuID:    skuID,
+		Quantity: arg.GetQuantity(),
+	})
+
+	response := &pb.UpdateInventorySKUResponse{
+		Inventory: &pb.Inventory{
+			Id:           result.Inventory.ID,
+			SkuId:        result.Inventory.SkuID.String(),
+			Stock:        result.Inventory.Stock,
+			Reservations: string(result.Inventory.Reservations),
+		},
 	}
 
 	return response, nil
