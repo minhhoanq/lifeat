@@ -1,5 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE "orders" (
-  "id" uuid PRIMARY KEY,
+  "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   "user_id" uuid,
   "address" varchar,
   "payment_method" varchar,
@@ -9,7 +11,7 @@ CREATE TABLE "orders" (
 );
 
 CREATE TABLE "order_items" (
-  "id" uuid PRIMARY KEY,
+  "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   "order_id" uuid,
   "sku_id" uuid,
   "quantity" int,

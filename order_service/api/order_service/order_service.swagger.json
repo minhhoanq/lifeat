@@ -97,6 +97,9 @@
         "status": {
           "type": "string"
         },
+        "paymentMethod": {
+          "type": "string"
+        },
         "items": {
           "type": "array",
           "items": {
@@ -129,14 +132,6 @@
         "quantity": {
           "type": "integer",
           "format": "int32"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },

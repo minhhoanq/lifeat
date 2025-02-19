@@ -6,6 +6,7 @@ import (
 	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/order_service/internal/dataaccess/database"
 	pb "github.com/minhhoanq/lifeat/order_service/internal/generated/order_service"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type OrderService interface {
@@ -46,10 +47,13 @@ func (o *orderService) CreateOrder(ctx context.Context, arg *pb.CreateOrderReque
 
 	response := &pb.CreateOrderResponse{
 		Order: &pb.Order{
-			Id:     result.Order.ID.String(),
-			UserId: result.Order.UserID.String(),
-			Status: "PENDING",
-			Items:  make([]*pb.OrderItem, 0, len(arg.CartItems)),
+			Id:            result.Order.ID.String(),
+			UserId:        result.Order.UserID.String(),
+			Status:        result.Order.Status,
+			PaymentMethod: result.Order.PaymentMethod,
+			CreatedAt:     timestamppb.New(result.Order.CreatedAt),
+			UpdatedAt:     timestamppb.New(result.Order.UpdatedAt),
+			Items:         make([]*pb.OrderItem, 0, len(arg.CartItems)),
 		},
 	}
 
@@ -62,5 +66,5 @@ func (o *orderService) CreateOrder(ctx context.Context, arg *pb.CreateOrderReque
 		})
 	}
 
-	return nil, nil
+	return response, nil
 }

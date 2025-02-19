@@ -11,7 +11,7 @@ import (
 
 type OrderDataAccessor interface {
 	CreateOrder(ctx context.Context, arg *CreateOrderRequest) (*CreateOrderResponse, error)
-	createOrderItems(ctx context.Context, arg []CreateOrderItemRequest, tx *gorm.DB) ([]OrderItem, error)
+	createOrderItems(ctx context.Context, order_id uuid.UUID, arg []CreateOrderItemRequest, tx *gorm.DB) ([]OrderItem, error)
 }
 
 type orderDataAccessor struct {
@@ -40,14 +40,22 @@ func (o *orderDataAccessor) CreateOrder(ctx context.Context, arg *CreateOrderReq
 			Address: arg.Address,
 			Status:  arg.Status,
 		}
-		if err := tx.WithContext(ctx).Create(order).Error; err != nil {
+		if err := tx.WithContext(ctx).Create(&order).Error; err != nil {
 			return err
 		}
 
-		orderItems, err := o.createOrderItems(ctx, arg.OrderItems, tx)
+		orderItems, err := o.createOrderItems(ctx, order.ID, arg.OrderItems, tx)
 
 		response = &CreateOrderResponse{
-			Order:      *order,
+			Order: Order{
+				ID:            order.ID,
+				UserID:        order.UserID,
+				Address:       order.Address,
+				Status:        order.Status,
+				PaymentMethod: order.PaymentMethod,
+				CreatedAt:     order.CreatedAt,
+				UpdatedAt:     order.UpdatedAt,
+			},
 			OrderItems: orderItems,
 		}
 
@@ -60,7 +68,7 @@ func (o *orderDataAccessor) CreateOrder(ctx context.Context, arg *CreateOrderReq
 	return response, err
 }
 
-func (o *orderDataAccessor) createOrderItems(ctx context.Context, arg []CreateOrderItemRequest, tx *gorm.DB) ([]OrderItem, error) {
+func (o *orderDataAccessor) createOrderItems(ctx context.Context, order_id uuid.UUID, arg []CreateOrderItemRequest, tx *gorm.DB) ([]OrderItem, error) {
 	orderItems := make([]OrderItem, 0, len(arg))
 
 	for _, item := range arg {
@@ -68,13 +76,10 @@ func (o *orderDataAccessor) createOrderItems(ctx context.Context, arg []CreateOr
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse uuid with sku id")
 		}
-		orderID, err := uuid.Parse(item.OrderID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse uuid with order id")
-		}
+
 		orderItems = append(orderItems, OrderItem{
 			SkuID:    skuID,
-			OrderID:  orderID,
+			OrderID:  order_id,
 			Quantity: item.Quantity,
 		})
 	}

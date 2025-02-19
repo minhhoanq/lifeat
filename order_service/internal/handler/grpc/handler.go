@@ -1,6 +1,8 @@
 package grpc
 
 import (
+	"context"
+
 	"github.com/minhhoanq/lifeat/common/logger"
 	pb "github.com/minhhoanq/lifeat/order_service/internal/generated/order_service"
 	"github.com/minhhoanq/lifeat/order_service/internal/service"
@@ -17,4 +19,8 @@ func NewHandler(l logger.Interface, orderService service.OrderService) (pb.Order
 		l:            l,
 		orderService: orderService,
 	}, nil
+}
+
+func (h *Handler) CreateOrder(ctx context.Context, arg *pb.CreateOrderRequest) (*pb.CreateOrderResponse, error) {
+	return h.orderService.CreateOrder(ctx, arg)
 }

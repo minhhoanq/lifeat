@@ -28,9 +28,10 @@ message Order {
   string id = 1;
   string user_id = 2;
   string status = 3;
-  repeated OrderItem items = 4;
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
+  string payment_method = 4;
+  repeated OrderItem items = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
 }
 
 message OrderItem {
@@ -38,6 +39,4 @@ message OrderItem {
   string order_id = 2;
   string sku_id = 3;
   int32 quantity = 4;
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
 }

@@ -13,7 +13,6 @@ type CreateOrderResponse struct {
 }
 
 type CreateOrderItemRequest struct {
-	OrderID  string `json:"order_id"`
 	SkuID    string `json:"sku_id"`
 	Quantity int32  `json:"quantity"`
 }
