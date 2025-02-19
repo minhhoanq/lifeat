@@ -6,6 +6,7 @@ type Config struct {
 	Environment         string `mapstructure:"ENVIRONMENT"`
 	GRPCServerAddress   string `mapstructure:"GRPC_SERVER_ADDRESS"`
 	GRPCUserAddress     string `mapstructure:"GRPC_USER_ADDRESS"`
+	GRPCCatalogAddress  string `mapstructure:"GRPC_CATALOG_ADDRESS"`
 	LogLevel            string `mapstructure:"LOG_LEVEL"`
 	DBDriver            string `mapstructure:"DB_DRIVER"`
 	DBSource            string `mapstructure:"DB_SOURCE"`

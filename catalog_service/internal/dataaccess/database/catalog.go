@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/minhhoanq/lifeat/common/logger"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -16,6 +17,7 @@ type CatalogDataAccessor interface {
 	ListProducts(ctx context.Context, arg *ListProductRequest) (*ListProductResponse, error)
 	CreateCart(ctx context.Context, arg *CreateCartRequest) (*CreateCartResponse, error)
 	AddToCartItem(ctx context.Context, arg *AddToCartItemRequest) (*AddToCartItemResponse, error)
+	GetSKU(ctx context.Context, arg *GetSKURequest) (*GetSKUResponse, error)
 }
 
 type catalogDataAccessor struct {
@@ -319,5 +321,27 @@ func (c *catalogDataAccessor) AddToCartItem(ctx context.Context, arg *AddToCartI
 	return &AddToCartItemResponse{
 		Cart:     Cart{ID: cartItem.ID},
 		CartItem: cartItems,
+	}, nil
+}
+
+func (c *catalogDataAccessor) GetSKU(ctx context.Context, arg *GetSKURequest) (*GetSKUResponse, error) {
+	var sku SKU
+	fmt.Println("sku id: ", arg.SkuID)
+	if err := c.database.Raw(`select * from skus where id = ?`, arg.SkuID).Scan(&sku).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("sku not found")
+		}
+		return nil, err
+	}
+
+	// Check if the SKU is not found and return an empty response
+	if sku.ID == uuid.Nil {
+		return nil, fmt.Errorf("sku not found")
+	}
+
+	fmt.Println("sku", sku)
+
+	return &GetSKUResponse{
+		SKU: sku,
 	}, nil
 }

@@ -20,6 +20,7 @@ type CatalogService interface {
 	ListProduct(ctx context.Context, arg *pb.ListProductRequest) (*pb.ListProductResponse, error)
 	CreateCart(ctx context.Context, arg *pb.CreateCartRequest) (*pb.CreateCartResponse, error)
 	AddToCartItem(ctx context.Context, arg *pb.AddToCartItemRequest) (*pb.AddToCartItemResponse, error)
+	GetSKU(ctx context.Context, arg *pb.GetSKURequest) (*pb.GetSKUResponse, error)
 }
 
 type catalogService struct {
@@ -234,6 +235,37 @@ func (c *catalogService) AddToCartItem(ctx context.Context, arg *pb.AddToCartIte
 			CartId:   item.CartID.String(),
 			SkuId:    item.SkuID.String(),
 			Quantity: item.Quantity,
+		})
+	}
+
+	return response, nil
+}
+
+func (c *catalogService) GetSKU(ctx context.Context, arg *pb.GetSKURequest) (*pb.GetSKUResponse, error) {
+	skuID, err := uuid.Parse(arg.SkuId)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := c.catalogAccessor.GetSKU(ctx, &database.GetSKURequest{SkuID: skuID})
+	if err != nil {
+		return nil, err
+	}
+
+	response := &pb.GetSKUResponse{
+		Sku: &pb.SKU{
+			Id:         result.SKU.ID.String(),
+			ProductId:  result.SKU.ProductID.String(),
+			Name:       result.SKU.Name,
+			Slug:       result.SKU.Slug,
+			Attributes: make([]*pb.AttributeValue, 0, len(result.SKU.SKUAttributes)),
+		},
+	}
+
+	for _, item := range result.SKU.SKUAttributes {
+		response.Sku.Attributes = append(response.Sku.Attributes, &pb.AttributeValue{
+			AttributeId: item.AttributeID,
+			Value:       item.Value,
 		})
 	}
 

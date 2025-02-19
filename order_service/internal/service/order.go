@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/minhhoanq/lifeat/common/logger"
 	"github.com/minhhoanq/lifeat/order_service/internal/dataaccess/database"
+	"github.com/minhhoanq/lifeat/order_service/internal/generated/catalog_service"
 	pb "github.com/minhhoanq/lifeat/order_service/internal/generated/order_service"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -14,15 +16,17 @@ type OrderService interface {
 }
 
 type orderService struct {
-	l                 logger.Interface
-	orderDataAccessor database.OrderDataAccessor
+	l                    logger.Interface
+	orderDataAccessor    database.OrderDataAccessor
+	catalogServiceClient catalog_service.CatalogServiceClient
 }
 
 // catalogAccessor database.CatalogDataAccessor
-func NewOrderService(l logger.Interface, orderDataAccessor database.OrderDataAccessor) OrderService {
+func NewOrderService(l logger.Interface, orderDataAccessor database.OrderDataAccessor, catalogServiceClient catalog_service.CatalogServiceClient) OrderService {
 	return &orderService{
-		l:                 l,
-		orderDataAccessor: orderDataAccessor,
+		l:                    l,
+		orderDataAccessor:    orderDataAccessor,
+		catalogServiceClient: catalogServiceClient,
 	}
 }
 
@@ -34,6 +38,17 @@ func (o *orderService) CreateOrder(ctx context.Context, arg *pb.CreateOrderReque
 		OrderItems: make([]database.CreateOrderItemRequest, 0, len(arg.CartItems)),
 	}
 	for _, item := range arg.CartItems {
+		sku, err := o.catalogServiceClient.GetSKU(ctx, &catalog_service.GetSKURequest{
+			SkuId: item.SkuId,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to find sku", err)
+		}
+
+		if sku.Sku.Id == "" || sku.Sku == nil {
+			return nil, fmt.Errorf("invalid product", err)
+		}
+
 		order.OrderItems = append(order.OrderItems, database.CreateOrderItemRequest{
 			SkuID:    item.SkuId,
 			Quantity: item.Quantity,

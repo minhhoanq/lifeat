@@ -82,3 +82,7 @@ func (h *Handler) AddToCartItem(ctx context.Context, arg *pb.AddToCartItemReques
 	}
 	return cart, nil
 }
+
+func (h *Handler) GetSKU(ctx context.Context, arg *pb.GetSKURequest) (*pb.GetSKUResponse, error) {
+	return h.catalogService.GetSKU(ctx, arg)
+}

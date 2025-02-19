@@ -81,3 +81,11 @@ type AddToCartItemResponse struct {
 	Cart     Cart       `json:"cart"`
 	CartItem []CartItem `json:"cart_item"`
 }
+
+type GetSKURequest struct {
+	SkuID uuid.UUID `json:"sku_id"`
+}
+
+type GetSKUResponse struct {
+	SKU SKU `json:"sku"`
+}

@@ -5,6 +5,7 @@ import (
 	"github.com/minhhoanq/lifeat/order_service/config"
 	"github.com/minhhoanq/lifeat/order_service/internal/dataaccess/database"
 	"github.com/minhhoanq/lifeat/order_service/internal/handler/grpc"
+	catalogservice "github.com/minhhoanq/lifeat/order_service/internal/handler/grpc/clients/catalog_service"
 	"github.com/minhhoanq/lifeat/order_service/internal/service"
 )
 
@@ -14,9 +15,11 @@ func InitialServer(cfg config.Config, l logger.Interface) (grpc.Server, error) {
 		return nil, err
 	}
 
+	catalogServiceClient, err := catalogservice.NewClient(cfg, l)
+
 	orderDataAccessor := database.NewOrderDataAccessor(db, l)
 	// Initialize the service
-	orderService := service.NewOrderService(l, orderDataAccessor)
+	orderService := service.NewOrderService(l, orderDataAccessor, catalogServiceClient)
 	// Initialize the handler
 	handler, err := grpc.NewHandler(l, orderService)
 	// Initialize the server
