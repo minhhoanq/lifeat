@@ -53,7 +53,7 @@ func (o *orderService) CreateOrder(ctx context.Context, arg *pb.CreateOrderReque
 			SkuId: sku.Sku.Id,
 		})
 
-		if item.Quantity-inventory.Inventory.Stock < 0 {
+		if inventory.Inventory.Stock-item.Quantity < 0 {
 			return nil, fmt.Errorf("quantity > stock")
 		}
 

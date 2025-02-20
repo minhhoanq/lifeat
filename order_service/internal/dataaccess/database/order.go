@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/minhhoanq/lifeat/common/logger"
+	"github.com/minhhoanq/lifeat/order_service/internal/generated/catalog_service"
 	"gorm.io/gorm"
 )
 
@@ -15,14 +16,16 @@ type OrderDataAccessor interface {
 }
 
 type orderDataAccessor struct {
-	database Database
-	l        logger.Interface
+	database             Database
+	l                    logger.Interface
+	catalogServiceClient catalog_service.CatalogServiceClient
 }
 
-func NewOrderDataAccessor(database Database, l logger.Interface) OrderDataAccessor {
+func NewOrderDataAccessor(database Database, l logger.Interface, catalogServiceClient catalog_service.CatalogServiceClient) OrderDataAccessor {
 	return &orderDataAccessor{
-		database: database,
-		l:        l,
+		database:             database,
+		l:                    l,
+		catalogServiceClient: catalogServiceClient,
 	}
 }
 
@@ -80,6 +83,10 @@ func (o *orderDataAccessor) createOrderItems(ctx context.Context, order_id uuid.
 		orderItems = append(orderItems, OrderItem{
 			SkuID:    skuID,
 			OrderID:  order_id,
+			Quantity: item.Quantity,
+		})
+		o.catalogServiceClient.UpdateInventorySKU(ctx, &catalog_service.UpdateInventorySKURequest{
+			SkuId:    item.SkuID,
 			Quantity: item.Quantity,
 		})
 	}

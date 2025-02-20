@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -309,6 +310,10 @@ func (c *catalogService) UpdateInventorySKU(ctx context.Context, arg *pb.UpdateI
 		SkuID:    skuID,
 		Quantity: arg.GetQuantity(),
 	})
+
+	if result.Inventory.SkuID == uuid.Nil {
+		return nil, fmt.Errorf("failed to update inventory")
+	}
 
 	response := &pb.UpdateInventorySKUResponse{
 		Inventory: &pb.Inventory{

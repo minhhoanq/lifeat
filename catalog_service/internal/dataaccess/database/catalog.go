@@ -362,9 +362,6 @@ func (c *catalogDataAccessor) GetInventorySKU(ctx context.Context, arg *GetInven
 }
 
 func (c *catalogDataAccessor) UpdateInventorySKU(ctx context.Context, arg *UpdateInventorySKURequest) (*UpdateInventorySKUResponse, error) {
-	quantity := arg.Quantity
-	fmt.Println("quantity", quantity)
-
 	query := `
         UPDATE inventories 
         SET stock = COALESCE(stock - COALESCE($1, 0), stock)
@@ -374,12 +371,9 @@ func (c *catalogDataAccessor) UpdateInventorySKU(ctx context.Context, arg *Updat
     `
 
 	var inventory Inventory
-	fmt.Println("quantity", quantity)
-
-	if err := c.database.WithContext(ctx).Raw(query, quantity, arg.SkuID).Scan(&inventory).Error; err != nil {
+	if err := c.database.WithContext(ctx).Raw(query, arg.Quantity, arg.SkuID).Scan(&inventory).Error; err != nil {
 		return nil, fmt.Errorf("failed to update inventory")
 	}
-	fmt.Println("updated inventory", inventory)
 
 	return &UpdateInventorySKUResponse{
 		Inventory: inventory,
