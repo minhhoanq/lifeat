@@ -16,14 +16,14 @@ func InitialServer(cfg config.Config, l logger.Interface) (grpc.Server, error) {
 		return nil, err
 	}
 
-	redisClient := redis.NewRedis(cfg, l)
-	defer redisClient.Close()
+	redisInit := redis.NewRedis(cfg, l)
+	defer redisInit.Close()
 
-	redisClient.Connect()
+	redisClient := redisInit.Connect()
 
 	catalogServiceClient, err := catalogservice.NewClient(cfg, l)
 
-	orderDataAccessor := database.NewOrderDataAccessor(db, l, catalogServiceClient)
+	orderDataAccessor := database.NewOrderDataAccessor(db, l, catalogServiceClient, redisInit, redisClient)
 	// Initialize the service
 	orderService := service.NewOrderService(l, orderDataAccessor, catalogServiceClient)
 	// Initialize the handler

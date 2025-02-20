@@ -3,10 +3,15 @@ package database
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/minhhoanq/lifeat/common/logger"
+	redisOrder "github.com/minhhoanq/lifeat/order_service/internal/dataaccess/redis"
 	"github.com/minhhoanq/lifeat/order_service/internal/generated/catalog_service"
+	"github.com/minhhoanq/lifeat/order_service/pkg/helper"
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -19,13 +24,22 @@ type orderDataAccessor struct {
 	database             Database
 	l                    logger.Interface
 	catalogServiceClient catalog_service.CatalogServiceClient
+	redisInit            *redisOrder.Redis
+	redisClient          *redis.Client
 }
 
-func NewOrderDataAccessor(database Database, l logger.Interface, catalogServiceClient catalog_service.CatalogServiceClient) OrderDataAccessor {
+func NewOrderDataAccessor(database Database,
+	l logger.Interface,
+	catalogServiceClient catalog_service.CatalogServiceClient,
+	redisInit *redisOrder.Redis,
+	redisClient *redis.Client,
+) OrderDataAccessor {
 	return &orderDataAccessor{
 		database:             database,
 		l:                    l,
 		catalogServiceClient: catalogServiceClient,
+		redisInit:            redisInit,
+		redisClient:          redisClient,
 	}
 }
 
@@ -75,20 +89,52 @@ func (o *orderDataAccessor) createOrderItems(ctx context.Context, order_id uuid.
 	orderItems := make([]OrderItem, 0, len(arg))
 
 	for _, item := range arg {
-		skuID, err := uuid.Parse(item.SkuID)
+		lockKey := fmt.Sprintf("lock_order_%w", item.SkuID)
+		lockTimeout := 10 * time.Second
+		lockValue, err := helper.GenerateRandomValue()
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse uuid with sku id")
+			return nil, fmt.Errorf("failed to generate lock value", err)
 		}
 
-		orderItems = append(orderItems, OrderItem{
-			SkuID:    skuID,
-			OrderID:  order_id,
-			Quantity: item.Quantity,
-		})
-		o.catalogServiceClient.UpdateInventorySKU(ctx, &catalog_service.UpdateInventorySKURequest{
-			SkuId:    item.SkuID,
-			Quantity: item.Quantity,
-		})
+		if ok := o.redisInit.AcquireLock(o.redisClient, lockKey, lockValue, lockTimeout); !ok {
+			o.l.Error("failed to acquire lock")
+			return nil, fmt.Errorf("failed to acquire lock")
+		} else {
+			// process order
+			skuID, err := uuid.Parse(item.SkuID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse uuid with sku id")
+			}
+
+			orderItems = append(orderItems, OrderItem{
+				SkuID:    skuID,
+				OrderID:  order_id,
+				Quantity: item.Quantity,
+			})
+			o.catalogServiceClient.UpdateInventorySKU(ctx, &catalog_service.UpdateInventorySKURequest{
+				SkuId:    item.SkuID,
+				Quantity: item.Quantity,
+			})
+
+			// get lock value
+			val, err := o.redisClient.Get(ctx, lockKey).Result()
+			if err != nil {
+				o.l.Error("failed to get value lock")
+				return nil, fmt.Errorf("failed to get value lock")
+			}
+			// if val == lockKey => release lock
+			if val == lockKey {
+				if err := o.redisInit.ReleaseLock(o.redisClient, lockKey); err != nil {
+					o.l.Error("failed to delete lock ", zap.Error(err))
+					return nil, fmt.Errorf("failed to delete lock ", err)
+				}
+
+				o.l.Info("release lock successfully")
+			} else {
+				o.l.Info("lock is not match")
+				// TODO
+			}
+		}
 	}
 
 	if err := tx.WithContext(ctx).Create(&orderItems).Error; err != nil {

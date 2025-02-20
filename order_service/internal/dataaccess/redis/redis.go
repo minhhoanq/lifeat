@@ -38,11 +38,11 @@ func (r *Redis) Close() {
 	r.Close()
 }
 
-func (r *Redis) AcquireLock(client *redis.Client, lockKey string, timeout time.Duration) bool {
+func (r *Redis) AcquireLock(client *redis.Client, lockKey string, lockValue string, timeout time.Duration) bool {
 	ctx := context.Background()
 
 	// Try to acquire the lock with SETNX command (SET if Not Exists)
-	lockAcquire, err := client.SetNX(ctx, lockKey, "1", timeout).Result()
+	lockAcquire, err := client.SetNX(ctx, lockKey, lockValue, timeout).Result()
 	if err != nil {
 		r.l.Error("error acquiring lock: ", zap.Error(err))
 		return false
@@ -51,7 +51,12 @@ func (r *Redis) AcquireLock(client *redis.Client, lockKey string, timeout time.D
 	return lockAcquire
 }
 
-func ReleaseLock(client *redis.Client, lockKey string) {
+func (r *Redis) ReleaseLock(client *redis.Client, lockKey string) error {
 	ctx := context.Background()
-	client.Del(ctx, lockKey)
+	_, err := client.Del(ctx, lockKey).Result()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

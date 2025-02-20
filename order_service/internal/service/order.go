@@ -22,7 +22,10 @@ type orderService struct {
 }
 
 // catalogAccessor database.CatalogDataAccessor
-func NewOrderService(l logger.Interface, orderDataAccessor database.OrderDataAccessor, catalogServiceClient catalog_service.CatalogServiceClient) OrderService {
+func NewOrderService(l logger.Interface,
+	orderDataAccessor database.OrderDataAccessor,
+	catalogServiceClient catalog_service.CatalogServiceClient,
+) OrderService {
 	return &orderService{
 		l:                    l,
 		orderDataAccessor:    orderDataAccessor,
