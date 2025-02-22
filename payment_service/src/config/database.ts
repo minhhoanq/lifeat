@@ -5,7 +5,7 @@ export class DatabaseConfig {
     public port = 5435;
     public user = "root";
     public password = "secret";
-    public name = "";
+    public name = "lifeat_payment_service_psql";
 
     public static fromEnv(): DatabaseConfig {
         const config = new DatabaseConfig()

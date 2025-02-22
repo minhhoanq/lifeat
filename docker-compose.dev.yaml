@@ -36,6 +36,18 @@ services:
         volumes:
             - ./db/order_service:/var/lib/postgresql/data
 
+    payment_service_psql:
+        image: postgres:17-alpine
+        ports:
+            - "5435:5432"
+        environment:
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=secret
+            - POSTGRES_DB=lifeat_payment_service_psql
+        restart: always
+        volumes:
+            - ./db/payment_service:/var/lib/postgresql/data
+
     redis:
         image: redis:7-alpine
         restart: always

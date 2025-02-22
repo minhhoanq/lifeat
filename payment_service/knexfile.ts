@@ -5,7 +5,7 @@ import dotenv from "dotenv"
 dotenv.config()
 
 const POSTGRES_HOST = process.env.DB_HOST;
-const POSTGRES_PORT = +(process.env.DB_PORT || 5432);
+const POSTGRES_PORT = +(process.env.DB_PORT || 5435);
 const POSTGRES_DB = process.env.DB_NAME;
 const POSTGRES_USER = process.env.DB_USER;
 const POSTGRES_PASSWORD = process.env.DB_PASSWORD;

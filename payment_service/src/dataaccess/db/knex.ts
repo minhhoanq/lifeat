@@ -13,14 +13,6 @@ export function newKnexInstance(databaseConfig: DatabaseConfig): Knex {
             database: databaseConfig.name,
             ssl: false
         },
-        migrations: {
-            directory: "../../migrations",
-            extension: "ts"
-        },
-        seeds: {
-            directory: "",
-            extension: "ts"
-        }
     });
 }
 

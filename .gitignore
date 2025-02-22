@@ -1,3 +1,4 @@
 db/user_service
 db/catalog_service
 db/order_service
+db/payment_service
