@@ -5,6 +5,7 @@
     "scripts": {
         "start": "node dist/main.js",
         "dev": "nodemon src/main.ts",
+        "serve-grpc": "ts-node src/main.ts --start_grpc_server",
         "build": "tsc",
         "test": "jest"
     },
@@ -13,16 +14,21 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
+        "@types/knex": "^0.15.2",
         "brandi": "^5.0.0",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
         "express-validator": "^7.2.1",
         "knex": "^3.1.0",
+        "minimist": "^1.2.8",
         "pg": "^8.13.3",
         "winston": "^3.17.0"
     },
     "devDependencies": {
+        "@grpc/grpc-js": "^1.12.6",
+        "@grpc/proto-loader": "^0.7.13",
         "@types/express": "^5.0.0",
+        "@types/minimist": "^1.2.5",
         "@types/node": "^22.13.5",
         "nodemon": "^3.1.9",
         "ts-node": "^10.9.2",
