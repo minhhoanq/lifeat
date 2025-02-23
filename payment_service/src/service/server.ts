@@ -27,6 +27,7 @@ export class PaymentServiceGRPCServer {
         })
 
         server.addService(paymentServiceProtoGrpc.protoGrpcType.payment_service.PaymentService.service, this.handlerFactory.handlers());
+        // turn on reflection for client connect with proto file
         const reflection = new ReflectionService(paymentServiceProtoGrpc.packageDefinition)
         reflection.addToServer(server)
         server.bindAsync(`0.0.0.0:${this.grpcConfig.port}`, ServerCredentials.createInsecure(), (error, port) => {

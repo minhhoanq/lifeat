@@ -3,6 +3,8 @@ import dotenv from "dotenv"
 import * as config from "../config";
 import * as utils from "../utils";
 import * as service from "../service";
+import * as modules from "../modules";
+import * as db from "../dataaccess/db";
 
 export async function startGRPCServer(dotenvPath: string): Promise<void> {
     dotenv.config({
@@ -13,6 +15,8 @@ export async function startGRPCServer(dotenvPath: string): Promise<void> {
     utils.bindToContainer(container);
     config.bindToContainer(container);
     service.bindToContainer(container);
+    modules.bindToContainer(container);
+    db.bindToContainer(container);
 
     const server = container.get(service.PAYMENT_SERVICE_GRPC_SERVER_TOKEN);
     server.loadProtoAndStartServer("./src/proto/payment_service.proto")
